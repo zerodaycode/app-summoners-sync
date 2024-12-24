@@ -52,7 +52,6 @@ jobs:
 
       # Step 2: Validate and Trigger Deploy Workflow
       - name: Trigger Deployment Workflow
-        if: steps.parse_command.outputs.environment != '' && steps.parse_command.outputs.project != ''
         uses: actions/github-script@v6
         with:
           script: |
