@@ -32,6 +32,7 @@ jobs:
           if [[ "$COMMENT_BODY" =~ --project[[:space:]]+\"([^\"]+)\" ]]; then
             PROJECT="${BASH_REMATCH[1]}"
             echo "Project: $PROJECT"
+            # TODO: else stopping the workflow if no env present
           fi
 
           # Parse infra
@@ -44,6 +45,10 @@ jobs:
           echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
           echo "project=$PROJECT" >> $GITHUB_OUTPUT
           echo "infra=$INFRA" >> $GITHUB_OUTPUT
+
+      # TODO: from here, isolate them in independent workflows
+      # and just call them depending on the input by having just
+      # a simple and unique trigger deployment
 
       # Step 2: Validate and Trigger Deploy Workflow
       - name: Trigger Deployment Workflow
@@ -67,7 +72,7 @@ jobs:
       # Step 3: Deploy Infra (if requested)
       - name: Deploy Infra
         if: steps.parse_command.outputs.infra != ''
-        uses: appleboy/ssh-action@v0.1.5
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -101,7 +106,7 @@ jobs:
             const project = `${{ steps.parse_command.outputs.project }}`;
             const infra = `${{ steps.parse_command.outputs.infra }}`;
             const prNumber = context.payload.issue.number;
-            
+
             let message = "🚀 Deployment triggered:\n";
             if (project) {
               message += `- Project: \`${project}\`\n`;
