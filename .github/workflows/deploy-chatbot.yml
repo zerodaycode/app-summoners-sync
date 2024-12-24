@@ -29,7 +29,7 @@ jobs:
           fi
 
           # Parse project
-          if [[ "$COMMENT_BODY" =~ --project[[:space:]]+\"([^\"]+)\" ]]; then
+          if [[ "$COMMENT_BODY" =~ --project[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
             PROJECT="${BASH_REMATCH[1]}"
             echo "Project: $PROJECT"
             # TODO: else stopping the workflow if no env present
