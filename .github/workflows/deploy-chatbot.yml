@@ -1,0 +1,122 @@
+name: Handle PRE env deployment commands in PR Comments
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  handle-slash-command:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Parse Deployment Command
+      - name: Parse Deployment Command
+        id: parse_command
+        run: |
+          COMMENT_BODY="${{ github.event.comment.body }}"
+          echo "Comment received: $COMMENT_BODY"
+          
+          # Initialize variables
+          ENVIRONMENT=""
+          PROJECT=""
+          INFRA=""
+
+          # Parse environment
+          if [[ "$COMMENT_BODY" =~ --environment[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
+            ENVIRONMENT="${BASH_REMATCH[1]}"
+            echo "Environment: $ENVIRONMENT"
+          fi
+
+          # Parse project
+          if [[ "$COMMENT_BODY" =~ --project[[:space:]]+\"([^\"]+)\" ]]; then
+            PROJECT="${BASH_REMATCH[1]}"
+            echo "Project: $PROJECT"
+          fi
+
+          # Parse infra
+          if [[ "$COMMENT_BODY" =~ --infra[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
+            INFRA="${BASH_REMATCH[1]}"
+            echo "Infra: $INFRA"
+          fi
+
+          # Output parsed values
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "project=$PROJECT" >> $GITHUB_OUTPUT
+          echo "infra=$INFRA" >> $GITHUB_OUTPUT
+
+      # Step 2: Validate and Trigger Deploy Workflow
+      - name: Trigger Deployment Workflow
+        if: steps.parse_command.outputs.environment != '' && steps.parse_command.outputs.project != ''
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const environment = `${{ steps.parse_command.outputs.environment }}`;
+            const project = `${{ steps.parse_command.outputs.project }}`;
+            const workflowId = `deploy-${environment}.yml`;
+
+            console.log(`Triggering workflow: ${workflowId} for project: ${project}`);
+
+            github.rest.actions.createWorkflowDispatch({
+              owner: 'zerodaycode',
+              repo: project,
+              workflow_id: workflowId,
+              ref: 'main', // TODO: Change branch to ref 
+            });
+
+      # Step 3: Deploy Infra (if requested)
+      - name: Deploy Infra
+        if: steps.parse_command.outputs.infra != ''
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            case "${{ steps.parse_command.outputs.infra }}" in
+              postgres)
+                echo "Deploying Postgres..."
+                docker run -d --name postgres --restart always -e POSTGRES_PASSWORD=mysecretpassword postgres
+                ;;
+              redis)
+                echo "Deploying Redis..."
+                docker run -d --name redis --restart always redis
+                ;;
+              all)
+                echo "Deploying Postgres and Redis..."
+                docker run -d --name postgres --restart always -e POSTGRES_PASSWORD=mysecretpassword postgres
+                docker run -d --name redis --restart always redis
+                ;;
+              *)
+                echo "Unknown infra: ${{ steps.parse_command.outputs.infra }}"
+                ;;
+            esac
+
+      # Step 4: Post Confirmation Comment
+      - name: Post Comment to PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const environment = `${{ steps.parse_command.outputs.environment }}`;
+            const project = `${{ steps.parse_command.outputs.project }}`;
+            const infra = `${{ steps.parse_command.outputs.infra }}`;
+            const prNumber = context.payload.issue.number;
+            
+            let message = "🚀 Deployment triggered:\n";
+            if (project) {
+              message += `- Project: \`${project}\`\n`;
+            }
+            if (environment) {
+              message += `- Environment: \`${environment}\`\n`;
+            }
+            if (infra) {
+              message += `- Infrastructure: \`${infra}\`\n`;
+            }
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: message,
+            });
+
