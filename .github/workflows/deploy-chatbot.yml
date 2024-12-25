@@ -73,7 +73,9 @@ jobs:
               message += `- Infrastructure: \`${infra}\`\n`;
             }
 
-            if (${{ env.ACT }}) {
+            let localRun = ${{ env.ACT }} || false 
+
+            if (localRun) {
               console.log(`Action is being runned locally by 'ACT'. 
               Skipping the notify user on PR, but output would have been:
               ${message}`);
