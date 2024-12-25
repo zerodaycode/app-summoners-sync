@@ -6,7 +6,7 @@ on:
       - created
 
 jobs:
-  handle-slash-command:
+  handle-deployment-on-pr-comment:
     runs-on: ubuntu-latest
 
     steps:
@@ -50,12 +50,19 @@ jobs:
           echo "project=$PROJECT" >> $GITHUB_OUTPUT
           echo "infra=$INFRA" >> $GITHUB_OUTPUT
 
+      - name: Get GH Zero Day Code APP token
+        uses: actions/create-github-app-token@v1
+        id: zdc-app-token
+        with:
+          app-id: ${{ vars.ZDC_AUTH_APP_ID }}
+          private-key: ${{ secrets.ZDC_AUTH_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
       - name: Notify the user
         uses: actions/github-script@v7
         with:
           script: |
             const environment = `${{ steps.parse_command.outputs.environment }}`;
-            console.log(`ENVIRONMENT: ${environment}`);
             const project = `${{ steps.parse_command.outputs.project }}`;
             const infra = `${{ steps.parse_command.outputs.infra }}`;
 
@@ -92,7 +99,6 @@ jobs:
       # and just call them depending on the input by having just
       # a simple and unique trigger deployment
 
-      # Step 2: Validate and Trigger Deploy Workflow
       - name: Trigger Deployment Workflow
         uses: actions/github-script@v7
         with:
@@ -104,13 +110,12 @@ jobs:
             console.log(`🚀 Triggering workflow: ${workflowId} for project: ${project}`);
 
             github.rest.actions.createWorkflowDispatch({
-              owner: 'zerodaycode',
+              owner: context.repo.owner,
               repo: project,
               workflow_id: workflowId,
               ref: 'main', // TODO: Change branch to ref 
             });
 
-      # Step 3: Deploy Infra (if requested)
       - name: Deploy Infra
         if: steps.parse_command.outputs.infra != ''
         uses: appleboy/ssh-action@v1.2.0
