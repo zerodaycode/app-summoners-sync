@@ -73,7 +73,7 @@ jobs:
               message += `- Infrastructure: \`${infra}\`\n`;
             }
 
-            let localRun = ${{ env.ACT }} || false 
+            const localRun = `${{ env.ACT }}` === "true";
 
             if (localRun) {
               console.log(`Action is being runned locally by 'ACT'. 
