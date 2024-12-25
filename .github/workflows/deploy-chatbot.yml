@@ -1,22 +1,29 @@
-name: Handle PRE env deployment commands in PR Comments
+name: Handle deployment commands in PR Comments
 
 on:
   issue_comment:
     types:
       - created
 
+permissions:
+  actions: write
+
 jobs:
   handle-slash-command:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Parse Deployment Command
       - name: Parse Deployment Command
         id: parse_command
         run: |
           COMMENT_BODY="${{ github.event.comment.body }}"
+          if [[ "$env.ACT" ]]; then
+            echo "Setting the command as a mock since it's running locally with ACT"
+            COMMENT_BODY='/deploy --environment pre --project ag-summoners-sync'
+          fi
+
           echo "Comment received: $COMMENT_BODY"
-          
+
           # Initialize variables
           ENVIRONMENT=""
           PROJECT=""
@@ -46,6 +53,42 @@ jobs:
           echo "project=$PROJECT" >> $GITHUB_OUTPUT
           echo "infra=$INFRA" >> $GITHUB_OUTPUT
 
+      - name: Notify the user
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const environment = `${{ steps.parse_command.outputs.environment }}`;
+            console.log(`ENVIRONMENT: ${environment}`);
+            const project = `${{ steps.parse_command.outputs.project }}`;
+            const infra = `${{ steps.parse_command.outputs.infra }}`;
+
+            let message = "🚀 Deployment action received:\n";
+            if (project) {
+              message += `- Project: \`${project}\`\n`;
+            }
+            if (environment) {
+              message += `- Environment: \`${environment}\`\n`;
+            }
+            if (infra) {
+              message += `- Infrastructure: \`${infra}\`\n`;
+            }
+
+            if (${{ env.ACT }}) {
+              console.log(`Action is being runned locally by 'ACT'. 
+              Skipping the notify user on PR, but output would have been:
+              ${message}`);
+              return;
+            }
+
+            const prNumber = context.payload.issue.number;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: message,
+            });
+
       # TODO: from here, isolate them in independent workflows
       # and just call them depending on the input by having just
       # a simple and unique trigger deployment
@@ -53,13 +96,15 @@ jobs:
       # Step 2: Validate and Trigger Deploy Workflow
       - name: Trigger Deployment Workflow
         uses: actions/github-script@v6
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const environment = `${{ steps.parse_command.outputs.environment }}`;
             const project = `${{ steps.parse_command.outputs.project }}`;
             const workflowId = `deploy-${environment}.yml`;
 
-            console.log(`Triggering workflow: ${workflowId} for project: ${project}`);
+            console.log(`🚀 Triggering workflow: ${workflowId} for project: ${project}`);
 
             github.rest.actions.createWorkflowDispatch({
               owner: 'zerodaycode',
@@ -95,32 +140,4 @@ jobs:
                 echo "Unknown infra: ${{ steps.parse_command.outputs.infra }}"
                 ;;
             esac
-
-      # Step 4: Post Confirmation Comment
-      - name: Post Comment to PR
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const environment = `${{ steps.parse_command.outputs.environment }}`;
-            const project = `${{ steps.parse_command.outputs.project }}`;
-            const infra = `${{ steps.parse_command.outputs.infra }}`;
-            const prNumber = context.payload.issue.number;
-
-            let message = "🚀 Deployment triggered:\n";
-            if (project) {
-              message += `- Project: \`${project}\`\n`;
-            }
-            if (environment) {
-              message += `- Environment: \`${environment}\`\n`;
-            }
-            if (infra) {
-              message += `- Infrastructure: \`${infra}\`\n`;
-            }
-
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: message,
-            });
 
