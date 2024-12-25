@@ -54,7 +54,7 @@ jobs:
           echo "infra=$INFRA" >> $GITHUB_OUTPUT
 
       - name: Notify the user
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const environment = `${{ steps.parse_command.outputs.environment }}`;
@@ -97,7 +97,7 @@ jobs:
 
       # Step 2: Validate and Trigger Deploy Workflow
       - name: Trigger Deployment Workflow
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
