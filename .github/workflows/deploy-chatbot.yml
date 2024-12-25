@@ -11,7 +11,6 @@ jobs:
 
     steps:
       - name: Parse Deployment Command
-        if: ${{ !env.ACT }}
         id: parse_command
         run: |
           COMMENT_BODY="${{ github.event.comment.body }}"
@@ -37,7 +36,9 @@ jobs:
           if [[ "$COMMENT_BODY" =~ --project[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
             PROJECT="${BASH_REMATCH[1]}"
             echo "Project: $PROJECT"
-            # TODO: else stopping the workflow if no env present
+          else
+            echo "No environment specified. Aborting workflow."
+            exit 1  # Aborts the workflow # TODO: pass it as an output to the user notifier step
           fi
 
           # Parse infra
@@ -52,6 +53,7 @@ jobs:
           echo "infra=$INFRA" >> $GITHUB_OUTPUT
 
       - name: Get GH Zero Day Code APP token
+        if: ${{ !env.ACT }}
         uses: actions/create-github-app-token@v1
         id: zdc-auth-app-token
         with:
@@ -67,7 +69,10 @@ jobs:
             const project = `${{ steps.parse_command.outputs.project }}`;
             const infra = `${{ steps.parse_command.outputs.infra }}`;
 
-            let message = "🚀 Deployment action received:\n";
+            const actor = `${{ github.event.comment.user.login }}`;
+            const username = (actor !== "") ? actor : 'Unknown';
+
+            let message = `🚀 Deployment action request received from user: ${username}\n`;
             if (project) {
               message += `- Project: \`${project}\`\n`;
             }
@@ -103,19 +108,17 @@ jobs:
       - name: Trigger Deployment Workflow
         uses: actions/github-script@v7
         with:
-          github-token: ${{ steps.zdc-auth-app-token.outputs.token }}
+          github-token: ${{ steps.zdc-auth-app-token.outputs.token || github.token }}
           script: |
             const environment = `${{ steps.parse_command.outputs.environment }}`;
             const project = `${{ steps.parse_command.outputs.project }}`;
             const workflowId = `deploy-${environment}.yml`;
 
-            console.log(`🚀 Triggering workflow: ${workflowId} for project: ${project}`);
-
             github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: project,
               workflow_id: workflowId,
-              ref: 'main', // TODO: Change branch to ref 
+              ref: 'main', // TODO: Change branch to ref if pre, otherwise PRO should be only on main
             });
 
       - name: Deploy Infra
