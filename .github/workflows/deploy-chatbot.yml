@@ -5,9 +5,6 @@ on:
     types:
       - created
 
-permissions:
-  actions: write
-
 jobs:
   handle-slash-command:
     runs-on: ubuntu-latest
