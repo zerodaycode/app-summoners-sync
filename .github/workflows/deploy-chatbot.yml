@@ -87,20 +87,25 @@ jobs:
               message += `- Infrastructure: \`${infra}\`\n`;
             }
 
-            if (${{ github.event.act }}) {
+            if (`${{ github.event.act }}` === 'true') {
               console.log(`Action is being runned locally by 'ACT'. 
               Skipping the notify user on PR, but output would have been:
               ${message}`);
               return { comment_id: 10 } // arbitraty mocked comment number;
             } else {
-              github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: message,
-              });
-              console.log(`Comment REST returned data: ${JSON.stringify(comment, null, 2)}`);
-              return { "comment_id": comment.data.id };
+              let comment = {};
+              try {
+                comment = await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: message,
+                });
+                return { "comment_id": comment.data.id };
+              } catch (ex) {
+                console.log("Failed to POST the comment on the PR to notify the user due to =[> " +  ex + "]");
+                return { "comment_id": null };
+              }
             }
 
       # TODO: from here, isolate them in independent workflows
@@ -174,7 +179,7 @@ jobs:
         id: update-comment-with-deployment-status
         with:
           script: |
-            const workflowLocalRun = ${{ github.event.act }};
+            const workflowLocalRun = `${{ github.event.act }}` === 'true';
 
             const commentOnPr = `${{ steps.notify_user.outputs.result }}`;
             const commentId = JSON.parse(commentOnPr).comment_id;
