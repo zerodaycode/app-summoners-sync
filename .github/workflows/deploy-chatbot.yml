@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Parse Deployment Command
-        id: parse_command
+        id: parse-command
         run: |
           WORKFLOW_LOCAL_RUN="${{ !github.event.act }}"
           COMMENT_BODY="${{ github.event.comment.body }}"
@@ -64,12 +64,12 @@ jobs:
 
       - name: Notify the user
         uses: actions/github-script@v7
-        id: notify_user
+        id: notify-user
         with:
           script: |
-            const environment = `${{ steps.parse_command.outputs.environment }}`;
-            const project = `${{ steps.parse_command.outputs.project }}`;
-            const infra = `${{ steps.parse_command.outputs.infra }}`;
+            const environment = `${{ steps.parse-command.outputs.environment }}`;
+            const project = `${{ steps.parse-command.outputs.project }}`;
+            const infra = `${{ steps.parse-command.outputs.infra }}`;
 
             const actor = `${{ github.event.comment.user.login }}`;
             const username = (actor !== "") ? actor : 'Unknown';
@@ -91,7 +91,7 @@ jobs:
               console.log(`Action is being runned locally by 'ACT'. 
               Skipping the notify user on PR, but output would have been:
               ${message}`);
-              return { comment_id: 10 } // arbitraty mocked comment number;
+              return { comment_id: 10, message: message } // arbitraty mocked comment number;
             } else {
               let comment = {};
               try {
@@ -101,7 +101,7 @@ jobs:
                   issue_number: prNumber,
                   body: message,
                 });
-                return { "comment_id": comment.data.id };
+                return { comment_id: comment.data.id, message: message };
               } catch (ex) {
                 console.log("Failed to POST the comment on the PR to notify the user due to =[> " +  ex + "]");
                 return { "comment_id": null };
@@ -114,12 +114,12 @@ jobs:
 
       - name: Trigger Deployment Workflow
         uses: actions/github-script@v7
-        id: trigger_deployment_workflow
+        id: trigger-deployment-workflow
         with:
           github-token: ${{ steps.zdc-auth-app-token.outputs.token || github.token }}
           script: |
-            const environment = `${{ steps.parse_command.outputs.environment }}`;
-            const project = `${{ steps.parse_command.outputs.project }}`;
+            const environment = `${{ steps.parse-command.outputs.environment }}`;
+            const project = `${{ steps.parse-command.outputs.project }}`;
             const workflowId = `deploy-${environment}.yml`;
 
             let result = "";
@@ -142,20 +142,20 @@ jobs:
 
             // Return triggered details
             return {
-              workflow_name: workflowId,
+              workflowId: workflowId,
               status: status,
               details: details,
             };
 
       - name: Deploy Infra
-        if: steps.parse_command.outputs.infra != ''
+        if: steps.parse-command.outputs.infra != ''
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            case "${{ steps.parse_command.outputs.infra }}" in
+            case "${{ steps.parse-command.outputs.infra }}" in
               postgres)
                 echo "Deploying Postgres..."
                 docker run -d --name postgres --restart always -e POSTGRES_PASSWORD=mysecretpassword postgres
@@ -170,7 +170,7 @@ jobs:
                 docker run -d --name redis --restart always redis
                 ;;
               *)
-                echo "Unknown infra: ${{ steps.parse_command.outputs.infra }}"
+                echo "Unknown infra: ${{ steps.parse-command.outputs.infra }}"
                 ;;
             esac
 
@@ -181,19 +181,20 @@ jobs:
           script: |
             const workflowLocalRun = `${{ github.event.act }}` === 'true';
 
-            const commentOnPr = `${{ steps.notify_user.outputs.result }}`;
-            const commentId = JSON.parse(commentOnPr).comment_id;
+            const commentOnPr = ${{ steps.notify-user.outputs.result }};
+            const commentId = commentOnPr.comment_id;
             console.log(`Updating comment with id ${commentId} for workflow status`);
             
-            const workflowDispatchResult = `${{ steps.trigger_deployment_workflow.outputs.result }}`;
-            console.log(`Trigger deployment status: ${workflowDispatchResult}`);
-            const workflowDetails = JSON.parse(workflowDispatchResult);
+            const workflowDetails = ${{ steps.trigger-deployment-workflow.outputs.result }};
+            console.log(`Trigger deployment status: ${JSON.stringify(workflowDetails, null, 2)}`);
 
             const runUrl = ""; // TODO: empty for now
             
             const statusIcon = workflowDetails.status === 'OK' ? '✅' : '❌';
             const statusMsg = workflowDetails.details;
-            const message = `${statusIcon} Deployment ${statusMsg}. [View Workflow](${runUrl})`;
+
+            const previousMsgData = commentOnPr.message;
+            const message = `${previousMsgData}\n${statusIcon} Deployment ${statusMsg}. [View Workflow](${runUrl})`;
             console.log(message);
 
             if (!workflowLocalRun) {
@@ -203,4 +204,40 @@ jobs:
                 comment_id: commentId,
                 body: message,
               });
+            }
+
+      - name: Wait for Deployment
+        id: wait-for-deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const project = `${{ steps.trigger-deployment-workflow.outputs.project }}`;
+            const workflowName = `${{ steps.trigger-deployment-workflow.outputs.workflowId }}`;
+            const pollInterval = 10 * 1000; // 10 seconds
+
+            console.log(`Polling for workflow status: ${workflowName} in ${project}`);
+
+            let status = 'in_progress';
+            let conclusion = '';
+            while (status === 'in_progress') {
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: project,
+                workflow_id: workflowName,
+                branch: 'main',
+                status: 'in_progress',
+              });
+
+              if (runs.data.workflow_runs.length > 0) {
+                const run = runs.data.workflow_runs[0]; // TODO: not really take the first one, should be fix later
+                status = run.status;
+                conclusion = run.conclusion;
+
+                if (status === 'completed') {
+                  console.log(`Workflow completed with status: ${conclusion}`);
+                  return { status: conclusion, run_url: run.html_url };
+                }
+              }
+
+              await new Promise(resolve => setTimeout(resolve, pollInterval));
             }
