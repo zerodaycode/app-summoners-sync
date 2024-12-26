@@ -189,7 +189,7 @@ jobs:
             console.log(`Trigger deployment status: ${JSON.stringify(workflowDetails, null, 2)}`);
 
             const owner = `${{ github.event.repository.owner.login }}`;
-            const project = `${{ github.event.repository.name }}`;
+            const project = `${{ steps.parse-command.outputs.project }}`;
             const runUrl = `https://github.com/${owner}/${project}/actions`;
             
             const statusIcon = workflowDetails.status === 'OK' ? '✅' : '❌';
