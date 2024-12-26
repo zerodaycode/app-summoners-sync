@@ -1,7 +1,10 @@
 module.exports = async ({github, context, steps}) => {
     console.log(`GITHUB: ${JSON.stringify(github, null, 2)}`);
     console.log(`CTX: ${JSON.stringify(context, null, 2)}`);
-    console.log(`STEPS: ${JSON.stringify(steps, null, 2)}`);
+    console.log(`process: ${JSON.stringify(process.env, null, 2)}`);
+    const {SHA} = process.env
+    console.log(`SHA: ${SHA}`)
+    // console.log(`STEPS: ${JSON.stringify(steps, null, 2)}`);
 
     const environment = steps.parse_command.outputs.environment;
     const project = steps.parse_command.outputs.project;

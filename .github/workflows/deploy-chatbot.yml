@@ -69,8 +69,9 @@ jobs:
         id: notify-user
         with:
           script: |
+            console.log(context)
             const script = require('./actions_scripts/notify_user.js')
-            await script({github, context, steps})
+            await script({github, context})
 
       # TODO: from here, isolate them in independent workflows
       # and just call them depending on the input by having just
