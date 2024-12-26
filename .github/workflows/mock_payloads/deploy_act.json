@@ -1,0 +1,18 @@
+{
+    "act": true,
+    "comment": {
+      "body": "/deploy --environment pre --project ag-summoners-sync",
+      "user": {
+        "login": "TheRustifyer"
+      }
+    },
+    "issue": {
+      "number": 4
+    },
+    "repository": {
+      "name": "app-summoners-sync",
+      "owner": {
+        "login": "zerodaycode"
+      }
+    }
+  }
