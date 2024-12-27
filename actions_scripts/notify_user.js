@@ -10,7 +10,7 @@ module.exports = async ({github, context, environment, project, infra}) => {
     return { comment_id: 10, message: message } // arbitraty mocked comment number;
   } else {
     try {
-      const comment = createPrComment(github, context, prNumber, message);
+      const comment = await createPrComment(github, context, prNumber, message);
       return { comment_id: comment.data.id, message: message };
     } catch (ex) {
       console.log("Failed to POST the comment on the PR to notify the user due to =[> " +  ex + "]");
