@@ -1,0 +1,105 @@
+name: Java Maven Code Quality
+
+on:
+  workflow_call:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'corretto'
+        java-version: '23'
+
+  formatting:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Spring Java Format check
+        run: |
+          if ! grep -q 'spring-javaformat-maven-plugin' pom.xml; then
+            echo "ERROR: Missing Spring Java Format plugin configuration in pom.xml"
+            echo "Refer to: https://github.com/spring-io/spring-javaformat"
+            exit 1
+          fi
+          mvn spring-javaformat:validate
+
+  linting:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Checkstyle
+        run: |
+          if ! grep -q 'maven-checkstyle-plugin' pom.xml; then
+            echo "ERROR: Missing Checkstyle plugin configuration in pom.xml"
+            echo "Refer to: https://maven.apache.org/plugins/maven-checkstyle-plugin/"
+            exit 1
+          fi
+          if [ ! -f "checkstyle.xml" ]; then
+            echo "ERROR: Missing checkstyle.xml configuration file"
+            echo "Refer to: https://checkstyle.sourceforge.io/"
+            exit 1
+          fi
+          mvn checkstyle:check
+
+  spotbugs:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run SpotBugs
+        run: |
+          if ! grep -q 'spotbugs-maven-plugin' pom.xml; then
+            echo "ERROR: Missing SpotBugs plugin configuration in pom.xml"
+            echo "Refer to: https://github.com/spotbugs/spotbugs-maven-plugin"
+            exit 1
+          fi
+          mvn spotbugs:check
+
+  pmd:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run PMD
+        run: |
+          if ! grep -q 'maven-pmd-plugin' pom.xml; then
+            echo "ERROR: Missing PMD plugin configuration in pom.xml"
+            echo "Refer to: https://maven.apache.org/plugins/maven-pmd-plugin/"
+            exit 1
+          fi
+          if [ ! -f "pmd.xml" ]; then
+            echo "ERROR: Missing pmd.xml configuration file"
+            echo "Refer to: https://pmd.github.io/"
+            exit 1
+          fi
+          mvn pmd:check
+
+  dependency-check:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run OWASP Dependency-Check
+        run: |
+          if ! grep -q 'dependency-check-maven' pom.xml; then
+            echo "ERROR: Missing Dependency-Check plugin configuration in pom.xml"
+            echo "Refer to: https://jeremylong.github.io/DependencyCheck/dependency-check-maven/"
+            exit 1
+          fi
+          mvn org.owasp:dependency-check-maven:check
+
+  coverage:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run JaCoCo tests and enforce coverage
+        run: |
+          if ! grep -q 'jacoco-maven-plugin' pom.xml; then
+            echo "ERROR: Missing JaCoCo plugin configuration in pom.xml"
+            echo "Refer to: https://www.eclemma.org/jacoco/trunk/doc/maven.html"
+            exit 1
+          fi
+          mvn test jacoco:report jacoco:check
