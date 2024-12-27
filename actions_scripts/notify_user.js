@@ -1,6 +1,5 @@
 import { ciLocalRun, extractUsername } from "./helpers.js";
 
-// Main function to notify the user about deployment actions.
 /**
  * Notify the user about the deployment action.
  * @param {Object} options - The options for the notification.

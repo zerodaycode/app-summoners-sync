@@ -9,50 +9,17 @@ jobs:
   handle-deployment-on-pr-comment:
     runs-on: ubuntu-latest
 
-    steps:
+    steps:      
+      - uses: actions/checkout@v4
+
       - name: Parse Deployment Command
+        uses: actions/github-script@v7
         id: parse-command
-        run: |
-          WORKFLOW_LOCAL_RUN="${{ !github.event.act }}"
-          COMMENT_BODY="${{ github.event.comment.body }}"
-          if [[ WORKFLOW_LOCAL_RUN ]]; then
-            echo "Setting the command as a mock since it's running locally with ACT"
-            COMMENT_BODY='/deploy --environment pre --project ag-summoners-sync'
-          fi
-
-          echo "Comment received: $COMMENT_BODY"
-
-          # Initialize variables
-          ENVIRONMENT=""
-          PROJECT=""
-          INFRA=""
-
-          # Parse environment
-          if [[ "$COMMENT_BODY" =~ --environment[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
-            ENVIRONMENT="${BASH_REMATCH[1]}"
-            echo "Environment: $ENVIRONMENT"
-          fi
-
-          # Parse project
-          if [[ "$COMMENT_BODY" =~ --project[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
-            PROJECT="${BASH_REMATCH[1]}"
-            echo "Project: $PROJECT"
-          else
-            echo "No environment specified. Aborting workflow."
-            exit 1  # Aborts the workflow # TODO: pass it as an output to the user notifier step
-          fi
-
-          # Parse infra
-          if [[ "$COMMENT_BODY" =~ --infra[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
-            INFRA="${BASH_REMATCH[1]}"
-            echo "Infra: $INFRA"
-          fi
-
-          # Output parsed values
-          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
-          echo "project=$PROJECT" >> $GITHUB_OUTPUT
-          echo "infra=$INFRA" >> $GITHUB_OUTPUT
-
+        with:
+          script: |
+            const { default: parseDeployCommand } = await import('${{ github.workspace }}/actions_scripts/parse_deployment_command.js')
+            parseDeployCommand({context, core})
+            
       - name: Get GH Zero Day Code APP token
         if: ${{ !github.event.act }}
         uses: actions/create-github-app-token@v1
@@ -61,8 +28,6 @@ jobs:
           app-id: ${{ vars.ZDC_AUTH_APP_ID }}
           private-key: ${{ secrets.ZDC_AUTH_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-
-      - uses: actions/checkout@v4
 
       - name: Notify the user
         uses: actions/github-script@v7
