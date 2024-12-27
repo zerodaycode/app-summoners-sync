@@ -1,3 +1,5 @@
+import { ciLocalRun, extractUsername } from "./helpers.js";
+
 // Main function to notify the user about deployment actions.
 /**
  * Notify the user about the deployment action.
@@ -12,7 +14,7 @@
 export default async ({ github, context, environment, project, infra }) => {
   const isLocalRun = ciLocalRun(context);
 
-  const username = getUsername(context);
+  const username = extractUsername(context);
   const prNumber = context.payload.issue.number;
   const message = generatePrCommentMsg(username, environment, project, infra);
 
@@ -30,32 +32,6 @@ export default async ({ github, context, environment, project, infra }) => {
     }
   }
 };
-
-// Helper function to determine if the workflow is running locally.
-/**
- * Check if the current run is a local run (e.g., with ACT).
- * @param {Object} context - GitHub Actions context object.
- * @returns {boolean} - True if running locally, false otherwise.
- */
-function ciLocalRun(context) {
-  const localRun = context.payload.act;
-  return (localRun !== undefined) ? localRun : false;
-}
-
-// Helper function to retrieve the username of the actor triggering the workflow.
-/**
- * Get the username of the actor from the context.
- * @param {Object} context - GitHub Actions context object.
- * @returns {string} - The username of the actor.
- * @throws {Error} - if the parsed actor text is non validdfd
- */
-function getUsername(context) {
-  const actor = context.actor;
-  if (actor !== undefined && actor !== "")
-    return actor; 
-   else
-    throw new Error("Unable to determine the actor (user) that triggered this deploy. Leaving...");
-}
 
 // Helper function to generate the PR comment message.
 /**
