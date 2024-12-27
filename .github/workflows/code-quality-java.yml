@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Run Spring Java Format check
         run: |
-          if ! grep -q 'spring-javaformat-maven-plugin' pom.xml; then
+          if ! grep -i 'spring-javaformat-maven-plugin' pom.xml; then
             echo "ERROR: Missing Spring Java Format plugin configuration in pom.xml"
             echo "Refer to: https://github.com/spring-io/spring-javaformat"
             exit 1
@@ -35,7 +35,7 @@ jobs:
     steps:
       - name: Run Checkstyle
         run: |
-          if ! grep -q 'maven-checkstyle-plugin' pom.xml; then
+          if ! grep -i 'maven-checkstyle-plugin' pom.xml; then
             echo "ERROR: Missing Checkstyle plugin configuration in pom.xml"
             echo "Refer to: https://maven.apache.org/plugins/maven-checkstyle-plugin/"
             exit 1
@@ -53,7 +53,7 @@ jobs:
     steps:
       - name: Run SpotBugs
         run: |
-          if ! grep -q 'spotbugs-maven-plugin' pom.xml; then
+          if ! grep -i 'spotbugs-maven-plugin' pom.xml; then
             echo "ERROR: Missing SpotBugs plugin configuration in pom.xml"
             echo "Refer to: https://github.com/spotbugs/spotbugs-maven-plugin"
             exit 1
@@ -66,7 +66,7 @@ jobs:
     steps:
       - name: Run PMD
         run: |
-          if ! grep -q 'maven-pmd-plugin' pom.xml; then
+          if ! grep -i 'maven-pmd-plugin' pom.xml; then
             echo "ERROR: Missing PMD plugin configuration in pom.xml"
             echo "Refer to: https://maven.apache.org/plugins/maven-pmd-plugin/"
             exit 1
@@ -84,7 +84,7 @@ jobs:
     steps:
       - name: Run OWASP Dependency-Check
         run: |
-          if ! grep -q 'dependency-check-maven' pom.xml; then
+          if ! grep -i 'dependency-check-maven' pom.xml; then
             echo "ERROR: Missing Dependency-Check plugin configuration in pom.xml"
             echo "Refer to: https://jeremylong.github.io/DependencyCheck/dependency-check-maven/"
             exit 1
@@ -97,7 +97,7 @@ jobs:
     steps:
       - name: Run JaCoCo tests and enforce coverage
         run: |
-          if ! grep -q 'jacoco-maven-plugin' pom.xml; then
+          if ! grep -i 'jacoco-maven-plugin' pom.xml; then
             echo "ERROR: Missing JaCoCo plugin configuration in pom.xml"
             echo "Refer to: https://www.eclemma.org/jacoco/trunk/doc/maven.html"
             exit 1
