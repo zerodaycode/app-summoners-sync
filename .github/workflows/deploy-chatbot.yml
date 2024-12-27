@@ -69,11 +69,11 @@ jobs:
         id: notify-user
         with:
           script: |
-            const script = require('./actions_scripts/notify_user.js')
+            const environment = `${{ steps.parse-command.outputs.environment }}`;
+            const project     = `${{ steps.parse-command.outputs.project }}`;
+            const infra       = `${{ steps.parse-command.outputs.infra }}`;
 
-            const environment = `${{ steps.parse-command.outputs.result.environment }}`;
-            const project     = `${{ steps.parse-command.outputs.result.project }}`;
-            const infra       = `${{ steps.parse-command.outputs.result.infra }}`;
+            const script = require('./actions_scripts/notify_user.js')
 
             return await script({github, context, environment, project, infra})
 
@@ -149,14 +149,11 @@ jobs:
         with:
           script: |
             const workflowLocalRun = `${{ github.event.act }}` === 'true';
-            console.log("Is local run: " + workflowLocalRun);
 
-            const commentOnPr = JSON.parse(`${{ steps.notify-user.outputs.result }}`);
+            const commentOnPr = ${{ steps.notify-user.outputs.result }};
             const commentId = commentOnPr.comment_id;
-            console.log(`Updating comment with id ${commentId} for workflow status`);
             
             const workflowDetails = ${{ steps.trigger-deployment-workflow.outputs.result }};
-            console.log(`Trigger deployment status: ${JSON.stringify(workflowDetails, null, 2)}`);
 
             const owner = `${{ github.event.repository.owner.login }}`;
             const project = `${{ steps.parse-command.outputs.project }}`;
