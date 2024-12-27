@@ -9,8 +9,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
+      - name: Debug - Check current working directory
+        run: |
+          echo "Current working directory:"
+          pwd
+
+      - name: Debug - List files in the repository
+        run: |
+          echo "Listing files in the current directory:"
+          ls -l
 
       - name: Set up Java
         uses: actions/setup-java@v4
