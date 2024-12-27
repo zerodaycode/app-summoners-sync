@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Parse Deployment Command
-        id: parse_command
+        id: parse-command
         run: |
           WORKFLOW_LOCAL_RUN="${{ !github.event.act }}"
           COMMENT_BODY="${{ github.event.comment.body }}"
@@ -69,10 +69,13 @@ jobs:
         id: notify-user
         with:
           script: |
-            console.log(github)
-            console.log(`GITHUB: ${JSON.stringify(github, null, 2)}`);
             const script = require('./actions_scripts/notify_user.js')
-            await script({github, context})
+
+            const environment = `${{ steps.parse-command.outputs.result.environment }}`;
+            const project     = `${{ steps.parse-command.outputs.result.project }}`;
+            const infra       = `${{ steps.parse-command.outputs.result.infra }}`;
+
+            return await script({github, context, environment, project, infra})
 
       # TODO: from here, isolate them in independent workflows
       # and just call them depending on the input by having just
@@ -84,8 +87,8 @@ jobs:
         with:
           github-token: ${{ steps.zdc-auth-app-token.outputs.token || github.token }}
           script: |
-            const environment = `${{ steps.parse_command.outputs.environment }}`;
-            const project = `${{ steps.parse_command.outputs.project }}`;
+            const environment = `${{ steps.parse-command.outputs.environment }}`;
+            const project = `${{ steps.parse-command.outputs.project }}`;
             const workflowId = `deploy-${environment}.yml`;
 
             let result = "";
@@ -114,14 +117,14 @@ jobs:
             };
 
       - name: Deploy Infra
-        if: steps.parse_command.outputs.infra != ''
+        if: steps.parse-command.outputs.infra != ''
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            case "${{ steps.parse_command.outputs.infra }}" in
+            case "${{ steps.parse-command.outputs.infra }}" in
               postgres)
                 echo "Deploying Postgres..."
                 docker run -d --name postgres --restart always -e POSTGRES_PASSWORD=mysecretpassword postgres
@@ -136,7 +139,7 @@ jobs:
                 docker run -d --name redis --restart always redis
                 ;;
               *)
-                echo "Unknown infra: ${{ steps.parse_command.outputs.infra }}"
+                echo "Unknown infra: ${{ steps.parse-command.outputs.infra }}"
                 ;;
             esac
 
@@ -146,8 +149,9 @@ jobs:
         with:
           script: |
             const workflowLocalRun = `${{ github.event.act }}` === 'true';
+            console.log("Is local run: " + workflowLocalRun);
 
-            const commentOnPr = ${{ steps.notify-user.outputs.result }};
+            const commentOnPr = JSON.parse(`${{ steps.notify-user.outputs.result }}`);
             const commentId = commentOnPr.comment_id;
             console.log(`Updating comment with id ${commentId} for workflow status`);
             
@@ -155,7 +159,7 @@ jobs:
             console.log(`Trigger deployment status: ${JSON.stringify(workflowDetails, null, 2)}`);
 
             const owner = `${{ github.event.repository.owner.login }}`;
-            const project = `${{ steps.parse_command.outputs.project }}`;
+            const project = `${{ steps.parse-command.outputs.project }}`;
             const runUrl = `https://github.com/${owner}/${project}/actions`;
             
             const statusIcon = workflowDetails.status === 'OK' ? '✅' : '❌';

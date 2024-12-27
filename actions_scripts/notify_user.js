@@ -1,9 +1,9 @@
 module.exports = async ({github, context, environment, project, infra}) => {
-    console.log(`CTX: ${JSON.stringify(context, null, 2)}`);
+    const localRun = context.payload.act;
+    const isLocalRun = (localRun !== undefined) ? localRun : false;
 
     const actor = context.actor;
-    console.log(`Actor: ${actor}`)
-    const username = (actor !== "") ? actor : 'Unknown';
+    const username = (actor !== undefined && actor !== "") ? actor : 'Unknown';
 
     const prNumber = context.payload.issue.number;
 
@@ -18,9 +18,9 @@ module.exports = async ({github, context, environment, project, infra}) => {
       message += `- Infrastructure: \`${infra}\`\n`;
     }
 
-    if (context.payload.act === 'true') {
+    if (isLocalRun) {
       console.log(`Action is being runned locally by 'ACT'. 
-      Skipping the notify user on PR, but output would have been:
+      Skipping the REST request to post a message for notify the user on PR, but output would have been:
       ${message}`);
       return { comment_id: 10, message: message } // arbitraty mocked comment number;
     } else {
@@ -35,7 +35,7 @@ module.exports = async ({github, context, environment, project, infra}) => {
         return { comment_id: comment.data.id, message: message };
       } catch (ex) {
         console.log("Failed to POST the comment on the PR to notify the user due to =[> " +  ex + "]");
-        return { "comment_id": null };
+        return { comment_id: null };
       }
     }
 }
