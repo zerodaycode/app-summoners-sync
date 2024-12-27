@@ -13,22 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get GH Zero Day Code APP token
-        if: ${{ !github.event.act }}
-        uses: actions/create-github-app-token@v1
-        id: zdc-auth-app-token
-        with:
-          app-id: ${{ vars.ZDC_AUTH_APP_ID }}
-          private-key: ${{ secrets.ZDC_AUTH_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-
       - name: Generate Changelog Preview
         id: changelog
         uses: mikepenz/release-changelog-builder-action@v5
         with:
           configuration: config/changelog-config.json
         env:
-          GITHUB_TOKEN: ${{ steps.zdc-auth-app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post Changelog to PR
         uses: marocchino/sticky-pull-request-comment@v2
@@ -37,5 +28,3 @@ jobs:
           message: |
             ## Changelog Preview
             ${{ steps.changelog.outputs.changelog }}
-        env:
-          GITHUB_TOKEN: ${{ steps.zdc-auth-app-token.outputs.token }}
