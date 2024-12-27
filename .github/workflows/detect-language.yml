@@ -5,7 +5,7 @@ on:
     outputs:
       language:
         description: "The detected programming language"
-        value: ${{ steps.language.outputs.language }}
+        value: ${{ needs.language.outputs.language }}
 
 jobs:
   detect-language:
