@@ -7,19 +7,27 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'corretto'
-        java-version: '23'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '23'
 
   formatting:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: Print the current working directory
+        run: |
+          pwd
+
+      - name: List files in the current directory
+        run: |
+          ls -l
+
       - name: Run Spring Java Format check
         run: |
           if ! grep -i 'spring-javaformat-maven-plugin' pom.xml; then
@@ -33,6 +41,14 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: Print the current working directory
+        run: |
+          pwd
+
+      - name: List files in the current directory
+        run: |
+          ls -l
+
       - name: Run Checkstyle
         run: |
           if ! grep -i 'maven-checkstyle-plugin' pom.xml; then
@@ -51,6 +67,14 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: Print the current working directory
+        run: |
+          pwd
+
+      - name: List files in the current directory
+        run: |
+          ls -l
+
       - name: Run SpotBugs
         run: |
           if ! grep -i 'spotbugs-maven-plugin' pom.xml; then
@@ -64,6 +88,14 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: Print the current working directory
+        run: |
+          pwd
+
+      - name: List files in the current directory
+        run: |
+          ls -l
+
       - name: Run PMD
         run: |
           if ! grep -i 'maven-pmd-plugin' pom.xml; then
@@ -82,6 +114,14 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: Print the current working directory
+        run: |
+          pwd
+
+      - name: List files in the current directory
+        run: |
+          ls -l
+
       - name: Run OWASP Dependency-Check
         run: |
           if ! grep -i 'dependency-check-maven' pom.xml; then
@@ -95,6 +135,14 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: Print the current working directory
+        run: |
+          pwd
+
+      - name: List files in the current directory
+        run: |
+          ls -l
+
       - name: Run JaCoCo tests and enforce coverage
         run: |
           if ! grep -i 'jacoco-maven-plugin' pom.xml; then
