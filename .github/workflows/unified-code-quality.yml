@@ -4,25 +4,20 @@ on:
   workflow_call:
 
 jobs:
-  detect-and-trigger:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Call Detect Main Language workflow
-        id: detect_language
-        uses: zerodaycode/app-summoners-sync/.github/workflows/detect-language.yml@feature/new-github-actions
-
-      - name: Check if the detected language is Java
-        id: check_java
-        run: |
-          if [[ "${{ steps.detect_language.outputs.language }}" == "Java" ]]; then
-            echo "Java detected, triggering Java Maven Code Quality workflow"
-            echo "trigger_java=true" >> $GITHUB_ENV
-          else
-            echo "Language detected is not Java. Skipping Java Maven Code Quality."
-            echo "trigger_java=false" >> $GITHUB_ENV
+  detect-language:
+    uses: zerodaycode/app-summoners-sync/.github/workflows/detect-language.yml@feature/new-github-actions
 
   trigger-java-code-quality:
-    if: ${{ env.trigger_java == 'true' }}
-    needs: detect-and-trigger
-    uses: zerodaycode/app-summoners-sync/.github/workflows/java-maven-code-quality.yml@feature/new-github-actions
+    needs: detect-language
+    if: ${{ needs.detect-language.outputs.language == 'Java' }}
+    uses: zerodaycode/app-summoners-sync/.github/workflows/code-quality-java.yml@feature/new-github-actions
+
+  fail-on-unsupported-language:
+    needs: detect-language
+    if: ${{ needs.detect-language.outputs.language != 'Java' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail Workflow for Unsupported Language
+        run: |
+          echo "Error: Unsupported language detected: ${{ needs.detect-language.outputs.language }}."
+          exit 1
