@@ -2,3 +2,5 @@
 
 .nvim/
 .idea/
+
+node_modules/

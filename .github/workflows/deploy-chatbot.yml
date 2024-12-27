@@ -73,13 +73,8 @@ jobs:
             const project     = `${{ steps.parse-command.outputs.project }}`;
             const infra       = `${{ steps.parse-command.outputs.infra }}`;
 
-            const script = require('./actions_scripts/notify_user.js')
-
-            return await script({github, context, environment, project, infra})
-
-      # TODO: from here, isolate them in independent workflows
-      # and just call them depending on the input by having just
-      # a simple and unique trigger deployment
+            const { default: notifyUser } = await import('${{ github.workspace }}/actions_scripts/notify_user.js')
+            return await notifyUser({github, context, environment, project, infra})
 
       - name: Trigger Deployment Workflow
         uses: actions/github-script@v7

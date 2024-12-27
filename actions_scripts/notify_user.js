@@ -1,4 +1,15 @@
-module.exports = async ({github, context, environment, project, infra}) => {
+// Main function to notify the user about deployment actions.
+/**
+ * Notify the user about the deployment action.
+ * @param {Object} options - The options for the notification.
+ * @param {Object} options.github - GitHub API client provided by actions/github-script.
+ * @param {Object} options.context - Context object from GitHub Actions, containing payload and environment details.
+ * @param {string} options.environment - Deployment environment (e.g., pre, prod).
+ * @param {string} options.project - Project name associated with the deployment.
+ * @param {string} options.infra - Infrastructure type (e.g., postgres, redis).
+ * @returns {Object} - An object containing the comment ID and the message content.
+ */
+export default async ({ github, context, environment, project, infra }) => {
   const isLocalRun = ciLocalRun(context);
 
   const username = getUsername(context);
@@ -7,44 +18,76 @@ module.exports = async ({github, context, environment, project, infra}) => {
 
   if (isLocalRun) {
     logMessageOnLocalEnv(message);
-    return { comment_id: 10, message: message } // arbitraty mocked comment number;
+    // Return a mock comment ID for local testing purposes.
+    return { comment_id: 1010101010, message: message };
   } else {
     try {
       const comment = await createPrComment(github, context, prNumber, message);
       return { comment_id: comment.data.id, message: message };
     } catch (ex) {
-      console.log("Failed to POST the comment on the PR to notify the user due to =[> " +  ex + "]");
+      console.log("Failed to POST the comment on the PR to notify the user due to =[> " + ex + "]");
       return { comment_id: null };
     }
   }
-}
+};
 
+// Helper function to determine if the workflow is running locally.
+/**
+ * Check if the current run is a local run (e.g., with ACT).
+ * @param {Object} context - GitHub Actions context object.
+ * @returns {boolean} - True if running locally, false otherwise.
+ */
 function ciLocalRun(context) {
   const localRun = context.payload.act;
-  return(localRun !== undefined) ? localRun : false;
+  return (localRun !== undefined) ? localRun : false;
 }
 
+// Helper function to retrieve the username of the actor triggering the workflow.
+/**
+ * Get the username of the actor from the context.
+ * @param {Object} context - GitHub Actions context object.
+ * @returns {string} - The username of the actor.
+ * @throws {Error} - if the parsed actor text is non validdfd
+ */
 function getUsername(context) {
   const actor = context.actor;
-  return (actor !== undefined && actor !== "") ? actor : 'Unknown';
-  // TODO: throw ex when undefined or non valid actor
+  if (actor !== undefined && actor !== "")
+    return actor; 
+   else
+    throw new Error("Unable to determine the actor (user) that triggered this deploy. Leaving...");
 }
 
+// Helper function to generate the PR comment message.
+/**
+ * Generate the content of the PR comment to notify the user.
+ * @param {string} username - Username of the actor triggering the workflow.
+ * @param {string} environment - Deployment environment (e.g., pre, pre-pro, pro).
+ * @param {string} project - Project name associated with the deployment.
+ * @param {string} infra - Infrastructure entity (e.g., postgres, redis).
+ * @returns {string} - The formatted message to be posted on the PR.
+ */
 function generatePrCommentMsg(username, environment, project, infra) {
   let message = `🚀 Deployment action request received from user: ${username}\n`;
-  if (project) {
+  
+  if (project)
     message += `- Project: \`${project}\`\n`;
-  }
-  if (environment) {
+  if (environment)
     message += `- Environment: \`${environment}\`\n`;
-  }
-  if (infra) {
+  if (infra)
     message += `- Infrastructure: \`${infra}\`\n`;
-  }
 
   return message;
 }
 
+// Helper function to create a PR comment via the GitHub API.
+/**
+ * Post a comment on the PR to notify the user.
+ * @param {Object} github - GitHub API client.
+ * @param {Object} context - GitHub Actions context object.
+ * @param {number} prNumber - Pull request number.
+ * @param {string} message - Message content to be posted.
+ * @returns {Object} - The response object from the GitHub API.
+ */
 async function createPrComment(github, context, prNumber, message) {
   return await github.rest.issues.createComment({
     owner: context.repo.owner,
@@ -54,8 +97,13 @@ async function createPrComment(github, context, prNumber, message) {
   });
 }
 
+// Helper function to log the PR comment message in a local environment.
+/**
+ * Log the message locally for debugging when running with ACT.
+ * @param {string} message - Message content to be logged.
+ */
 function logMessageOnLocalEnv(message) {
   console.log(`Action is being runned locally by 'ACT'. 
-    Skipping the REST request to post a message for notify the user on PR, but output would have been:
+    Skipping the REST request to post a message for notifying the user on PR, but the output would have been:
     ${message}`);
 }
