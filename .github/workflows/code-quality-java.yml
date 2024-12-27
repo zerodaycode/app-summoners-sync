@@ -9,14 +9,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Ensure the entire history is fetched
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
           java-version: '23'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
 
       - name: Upload all code files as artifact
         uses: actions/upload-artifact@v4
@@ -32,6 +38,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-files
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
 
       - name: Run Spring Java Format check
         run: |
@@ -50,6 +64,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-files
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
 
       - name: Run Checkstyle
         run: |
@@ -74,6 +96,14 @@ jobs:
         with:
           name: code-files
 
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
+
       - name: Run SpotBugs
         run: |
           if ! grep -i 'spotbugs-maven-plugin' pom.xml; then
@@ -91,6 +121,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-files
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
 
       - name: Run PMD
         run: |
@@ -115,6 +153,14 @@ jobs:
         with:
           name: code-files
 
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
+
       - name: Run OWASP Dependency-Check
         run: |
           if ! grep -i 'dependency-check-maven' pom.xml; then
@@ -132,6 +178,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-files
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
 
       - name: Run JaCoCo tests and enforce coverage
         run: |
