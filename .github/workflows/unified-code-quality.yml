@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Call Detect Main Language workflow
         id: detect_language
-        uses: ./.github/workflows/detect-language.yml
+        uses: zerodaycode/app-summoners-sync/.github/workflows/detect-language.yml@feature/new-github-actions
 
       - name: Check if the detected language is Java
         id: check_java
@@ -25,4 +25,4 @@ jobs:
   trigger-java-code-quality:
     if: ${{ env.trigger_java == 'true' }}
     needs: detect-and-trigger
-    uses: ./.github/workflows/java-maven-code-quality.yml
+    uses: zerodaycode/app-summoners-sync/.github/workflows/java-maven-code-quality.yml@feature/new-github-actions
