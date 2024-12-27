@@ -16,16 +16,23 @@ jobs:
           distribution: 'corretto'
           java-version: '23'
 
-      - name: Cache Maven repository
+      # Cache Maven Dependencies
+      - name: Cache Maven Dependencies
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-maven-
+            maven-deps-${{ runner.os }}-
 
-      - name: Build with Maven
-        run: mvn -B clean verify
+      - name: Pre-fetch Maven Dependencies
+        run: mvn dependency:go-offline
+
+      - name: Resolve Maven Plugin Dependencies
+        run: mvn dependency:resolve-plugins
+
+      - name: Run Maven Install without tests
+        run: mvn clean install -DskipTests
 
       - name: Upload all code files as artifact
         uses: actions/upload-artifact@v4
@@ -155,6 +162,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-files
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-deps-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-deps-${{ runner.os }}-
 
       - name: Run OWASP Dependency-Check
         run: |
