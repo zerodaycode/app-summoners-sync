@@ -2,6 +2,10 @@ name: Detect Main Language
 
 on:
   workflow_call:
+    outputs:
+      language:
+        description: "The detected programming language"
+        value: ${{ steps.language.outputs.language }}
 
 jobs:
   detect-language:
@@ -9,9 +13,6 @@ jobs:
     outputs:
       language: ${{ steps.language.outputs.language }}
     steps:
-      - name: Install jq
-        run: sudo apt-get install jq
-
       - name: Get main language of repository
         id: language
         run: |
