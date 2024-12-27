@@ -69,7 +69,8 @@ jobs:
         id: notify-user
         with:
           script: |
-            console.log(context)
+            console.log(github)
+            console.log(`GITHUB: ${JSON.stringify(github, null, 2)}`);
             const script = require('./actions_scripts/notify_user.js')
             await script({github, context})
 

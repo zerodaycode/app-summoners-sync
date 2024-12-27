@@ -1,16 +1,7 @@
-module.exports = async ({github, context, steps}) => {
-    console.log(`GITHUB: ${JSON.stringify(github, null, 2)}`);
+module.exports = async ({github, context, environment, project, infra}) => {
     console.log(`CTX: ${JSON.stringify(context, null, 2)}`);
-    console.log(`process: ${JSON.stringify(process.env, null, 2)}`);
-    const {SHA} = process.env
-    console.log(`SHA: ${SHA}`)
-    // console.log(`STEPS: ${JSON.stringify(steps, null, 2)}`);
 
-    const environment = steps.parse_command.outputs.environment;
-    const project = steps.parse_command.outputs.project;
-    const infra = steps.parse_command.outputs.infra;
-
-    const actor = github.event.comment.user.login;
+    const actor = context.actor;
     console.log(`Actor: ${actor}`)
     const username = (actor !== "") ? actor : 'Unknown';
 
@@ -27,7 +18,7 @@ module.exports = async ({github, context, steps}) => {
       message += `- Infrastructure: \`${infra}\`\n`;
     }
 
-    if (`${ github.event.act }` === 'true') {
+    if (context.payload.act === 'true') {
       console.log(`Action is being runned locally by 'ACT'. 
       Skipping the notify user on PR, but output would have been:
       ${message}`);
