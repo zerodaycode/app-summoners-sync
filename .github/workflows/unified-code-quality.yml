@@ -9,12 +9,12 @@ jobs:
 
   trigger-java-code-quality:
     needs: detect-language
-    if: ${{ steps.detect-language.outputs.language == 'Java' }}
+    if: ${{ needs.detect-language.outputs.language == 'Java' }}
     uses: zerodaycode/app-summoners-sync/.github/workflows/code-quality-java.yml@feature/new-github-actions
 
   fail-on-unsupported-language:
     needs: detect-language
-    if: ${{ steps.detect-language.outputs.language != 'Java' }}
+    if: ${{ needs.detect-language.outputs.language != 'Java' }}
     runs-on: ubuntu-latest
     steps:
       - name: Fail Workflow for Unsupported Language
