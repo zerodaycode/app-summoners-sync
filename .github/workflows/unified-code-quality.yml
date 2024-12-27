@@ -19,5 +19,5 @@ jobs:
     steps:
       - name: Fail Workflow for Unsupported Language
         run: |
-          echo "Error: Unsupported language detected: ${{ steps.detect-language.outputs.language }}."
+          echo "Error: Unsupported language detected: ${{ needs.detect-language.outputs.language }}."
           exit 1
