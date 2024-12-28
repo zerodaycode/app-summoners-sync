@@ -12,10 +12,9 @@ export default async (github, context, steps) => {
     const output = steps.run_tests.outputs.tests_report;
     const sanitized = output.split(marker);
     
-    let msg = getTitleMsg(); 
-    msg += (sanitized.length > 1) ? sanitized[1] : sanitized[0];
+    let msg = (sanitized.length > 1) ? sanitized[1] : sanitized[0];
 
-    const stylizedMsg = formatTestOutput(msg);
+    const stylizedMsg = getTitleMsg() + formatTestOutput(msg);
 
     if (!isLocalRun && sanitized.length >= 1) {
         createPrComment(github, context, prNumber, stylizedMsg);
@@ -59,7 +58,7 @@ export function formatTestOutput(textMsg) {
         if (line.startsWith('FAIL')) {
           return `💥 ${line}`;
         }
-        return `\t  ${line.trim()}`;
+        return `\t${line.trim()}`;
       })
       .join('\n');
   }
