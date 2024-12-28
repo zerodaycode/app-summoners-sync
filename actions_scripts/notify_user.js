@@ -10,7 +10,9 @@ import { ciLocalRun, extractUsername } from "./helpers.js";
  * @param {string} options.infra - Infrastructure type (e.g., postgres, redis).
  * @returns {Object} - An object containing the comment ID and the message content.
  */
-export default async ({ github, context, environment, project, infra }) => {
+export default async (options) => {
+  const { github, context, environment, project, infra } = options;
+  
   const isLocalRun = ciLocalRun(context);
 
   const username = extractUsername(context);
