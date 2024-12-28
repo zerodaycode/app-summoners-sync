@@ -16,7 +16,6 @@ jobs:
           distribution: 'corretto'
           java-version: '23'
 
-      # Cache Maven Dependencies
       - name: Cache Maven Dependencies
         uses: actions/cache@v4
         with:
@@ -59,12 +58,14 @@ jobs:
 
       - name: Run Spring Java Format check
         run: |
+          echo "🔍 Checking Spring Java Format..."
           if ! grep -i 'spring-javaformat-maven-plugin' pom.xml; then
-            echo "ERROR: Missing Spring Java Format plugin configuration in pom.xml"
+            echo "❌ ERROR: Missing Spring Java Format plugin configuration in pom.xml"
             echo "Refer to: https://github.com/spring-io/spring-javaformat"
             exit 1
           fi
           mvn spring-javaformat:validate
+          echo "✅ Spring Java Format validation passed!"
 
   linting:
     needs: setup
@@ -85,17 +86,24 @@ jobs:
 
       - name: Run Checkstyle
         run: |
+          echo "🔍 Running Checkstyle..."
           if ! grep -i 'maven-checkstyle-plugin' pom.xml; then
-            echo "ERROR: Missing Checkstyle plugin configuration in pom.xml"
+            echo "❌ ERROR: Missing Checkstyle plugin configuration in pom.xml"
             echo "Refer to: https://maven.apache.org/plugins/maven-checkstyle-plugin/"
             exit 1
           fi
           if [ ! -f "checkstyle.xml" ]; then
-            echo "ERROR: Missing checkstyle.xml configuration file"
+            echo "❌ ERROR: Missing checkstyle.xml configuration file"
             echo "Refer to: https://checkstyle.sourceforge.io/"
             exit 1
           fi
-          mvn checkstyle:check
+          mvn checkstyle:check || exit $?
+      - name: Upload Checkstyle Report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: checkstyle-report
+          path: target/checkstyle-result.xml
 
   spotbugs:
     needs: setup
@@ -116,12 +124,19 @@ jobs:
 
       - name: Run SpotBugs
         run: |
+          echo "🔍 Running SpotBugs..."
           if ! grep -i 'spotbugs-maven-plugin' pom.xml; then
-            echo "ERROR: Missing SpotBugs plugin configuration in pom.xml"
+            echo "❌ ERROR: Missing SpotBugs plugin configuration in pom.xml"
             echo "Refer to: https://github.com/spotbugs/spotbugs-maven-plugin"
             exit 1
           fi
-          mvn spotbugs:check
+          mvn spotbugs:check || exit $?
+      - name: Upload SpotBugs Report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: spotbugs-report
+          path: target/spotbugsXml.xml
 
   pmd:
     needs: setup
@@ -140,40 +155,26 @@ jobs:
           restore-keys: |
             maven-deps-${{ runner.os }}-
 
-      - name: Run PMD and parse results
+      - name: Run PMD
         run: |
+          echo "🔍 Running PMD..."
           if ! grep -i 'maven-pmd-plugin' pom.xml; then
-            echo "ERROR: Missing PMD plugin configuration in pom.xml"
+            echo "❌ ERROR: Missing PMD plugin configuration in pom.xml"
             echo "Refer to: https://maven.apache.org/plugins/maven-pmd-plugin/"
             exit 1
           fi
           if [ ! -f "pmd.xml" ]; then
-            echo "ERROR: Missing pmd.xml configuration file"
+            echo "❌ ERROR: Missing pmd.xml configuration file"
             echo "Refer to: https://pmd.github.io/"
             exit 1
           fi
-          mvn pmd:check || true
-          # Parse results
-          if [ -f target/pmd.xml ]; then
-            echo "PMD violations detected:"
-            xmllint --xpath '//violation' target/pmd.xml | sed -e 's/<[^>]*>//g'
-          fi
-
-      - name: Upload PMD full report
-        if: always()
+          mvn pmd:check || exit $?
+      - name: Upload PMD Report
         uses: actions/upload-artifact@v4
+        if: failure()
         with:
-          name: PMD Report
+          name: pmd-report
           path: target/pmd.xml
-
-      - name: Annotate pull request with PMD issues
-        if: always()
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          header: PMD Report
-          message: |
-            $(xmllint --xpath '//violation' target/pmd.xml | sed -e 's/<[^>]*>//g')
 
   dependency-check:
     needs: setup
@@ -194,12 +195,19 @@ jobs:
 
       - name: Run OWASP Dependency-Check
         run: |
+          echo "🔍 Running OWASP Dependency-Check..."
           if ! grep -i 'dependency-check-maven' pom.xml; then
-            echo "ERROR: Missing Dependency-Check plugin configuration in pom.xml"
+            echo "❌ ERROR: Missing Dependency-Check plugin configuration in pom.xml"
             echo "Refer to: https://jeremylong.github.io/DependencyCheck/dependency-check-maven/"
             exit 1
           fi
-          mvn org.owasp:dependency-check-maven:check
+          mvn org.owasp:dependency-check-maven:check || exit $?
+      - name: Upload Dependency-Check Report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: owasp-dependency-check-report
+          path: target/dependency-check-report.html
 
   coverage:
     needs: setup
@@ -220,9 +228,16 @@ jobs:
 
       - name: Run JaCoCo tests and enforce coverage
         run: |
+          echo "🔍 Running JaCoCo for code coverage..."
           if ! grep -i 'jacoco-maven-plugin' pom.xml; then
-            echo "ERROR: Missing JaCoCo plugin configuration in pom.xml"
+            echo "❌ ERROR: Missing JaCoCo plugin configuration in pom.xml"
             echo "Refer to: https://www.eclemma.org/jacoco/trunk/doc/maven.html"
             exit 1
           fi
-          mvn test jacoco:report jacoco:check
+          mvn test jacoco:report jacoco:check || exit $?
+      - name: Upload JaCoCo Report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/index.html
