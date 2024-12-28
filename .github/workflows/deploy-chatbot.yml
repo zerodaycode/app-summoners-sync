@@ -17,8 +17,10 @@ jobs:
         id: parse_command
         with:
           script: |
-            const { default: parseDeployCommand } = await import('${{ github.workspace }}/actions_scripts/parse_deployment_command.js')
-            parseDeployCommand({context, core})
+            const { default: parseDeployCommand } =
+              await import('${{ github.workspace }}/actions_scripts/parse_deployment_command.js');
+            
+            parseDeployCommand({context, core});
             
       - name: Get GH Zero Day Code APP token
         if: ${{ !github.event.act }}
@@ -39,9 +41,9 @@ jobs:
             const infra       = `${{ steps.parse_command.outputs.infra }}`;
 
             const { default: notifyUser } =
-              await import('${{ github.workspace }}/actions_scripts/notify_user.js')
+              await import('${{ github.workspace }}/actions_scripts/notify_user.js');
             
-            return await notifyUser(github, context, steps)
+            return await notifyUser({github, context, environment, project, infra});
 
       - name: Trigger Deployment Workflow
         uses: actions/github-script@v7
@@ -113,6 +115,6 @@ jobs:
             const steps = ${{ toJSON(steps) }};
 
             const { default: updatePrComment } = 
-              await import('${{ github.workspace }}/actions_scripts/update_pr_comment.js')
+              await import('${{ github.workspace }}/actions_scripts/update_pr_comment.js');
             
-            await updatePrComment(github, context, steps)
+            await updatePrComment(github, context, steps);
