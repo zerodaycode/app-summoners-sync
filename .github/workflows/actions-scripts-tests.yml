@@ -1,0 +1,32 @@
+name: Test Action Scripts
+
+on:
+  push:
+    paths:
+      - 'actions_scripts/**' # Trigger only when files in this folder are modified
+  pull_request:
+    paths:
+      - 'actions_scripts/**' # Run on PRs affecting the actions_scripts folder
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '23'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Run tests and collect coverage
+      - name: Run tests and generate coverage
+        run: npm test
