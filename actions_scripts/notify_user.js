@@ -1,4 +1,4 @@
-import { ciLocalRun, extractUsername } from "./helpers.js";
+import { ciLocalRun, extractUsername, createPrComment } from "./helpers.js";
 
 /**
  * Notify the user about the deployment action.
@@ -54,24 +54,6 @@ function generatePrCommentMsg(username, environment, project, infra) {
     message += `- Infrastructure: \`${infra}\`\n`;
 
   return message;
-}
-
-// Helper function to create a PR comment via the GitHub API.
-/**
- * Post a comment on the PR to notify the user.
- * @param {Object} github - GitHub API client.
- * @param {Object} context - GitHub Actions context object.
- * @param {number} prNumber - Pull request number.
- * @param {string} message - Message content to be posted.
- * @returns {Object} - The response object from the GitHub API.
- */
-async function createPrComment(github, context, prNumber, message) {
-  return await github.rest.issues.createComment({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    issue_number: prNumber,
-    body: message,
-  });
 }
 
 // Helper function to log the PR comment message in a local environment.

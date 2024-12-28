@@ -43,20 +43,8 @@ jobs:
         with:
           script: |
             const steps = ${{ toJSON(steps) }};
-            const marker = 'to show where the warning was created)';
-            const output = steps.run_tests.outputs.tests_report;
-            const sanitized = output.split(marker);
-            const msg = (sanitized.length > 1) ? sanitized[1] : sanitized[0];
 
-            const prNumber = context.payload.issue.number;
-
-            if (sanitized.length >= 1) {
-              github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: msg,
-              });
-            } else {
-                core.setFailed('No tests report data available.') 
-            }
+            const { default: testReportOnPrComment } = 
+              await import('${{ github.workspace }}/actions_scripts/tests_report_on_pr_comment.js');
+            
+            await testReportOnPrComment(github, context, steps);

@@ -1,7 +1,6 @@
 // Contains helper functions made to be reusable across the JS scripts
 // of the notifications
 
-// Helper function to determine if the workflow is running locally.
 /**
  * Check if the current run is a local run (e.g., with ACT).
  * @param {Object} context - GitHub Actions context object.
@@ -12,7 +11,23 @@ export function ciLocalRun(context) {
     return (localRun !== undefined) ? localRun : false;
 }
 
-// Helper function to retrieve the username of the actor triggering the workflow.
+/**
+ * Post a comment on the PR to notify the user.
+ * @param {Object} github - GitHub API client.
+ * @param {Object} context - GitHub Actions context object.
+ * @param {number} prNumber - Pull request number.
+ * @param {string} message - Message content to be posted.
+ * @returns {Object} - The response object from the GitHub API.
+ */
+export async function createPrComment(github, context, prNumber, message) {
+    return await github.rest.issues.createComment({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: prNumber,
+        body: message,
+    });
+}
+
 /**
  * Get the username of the actor from the context.
  * @param {Object} context - GitHub Actions context object.
@@ -27,7 +42,6 @@ export function extractUsername(context) {
         throw new Error("Unable to determine the actor (user) that triggered this deploy. Leaving...");
 }
 
-// Helper function to retrieve the owner of the repository in which the action has been triggered.
 /**
  * Get the username of the actor from the context.
  * @param {Object} context - GitHub Actions context object.
