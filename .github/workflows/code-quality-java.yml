@@ -155,26 +155,31 @@ jobs:
           restore-keys: |
             maven-deps-${{ runner.os }}-
 
-      - name: Run PMD
+      - name: Verify PMD configuration file
         run: |
-          echo "🔍 Running PMD..."
-          if ! grep -i 'maven-pmd-plugin' pom.xml; then
-            echo "❌ ERROR: Missing PMD plugin configuration in pom.xml"
-            echo "Refer to: https://maven.apache.org/plugins/maven-pmd-plugin/"
-            exit 1
-          fi
           if [ ! -f "pmd.xml" ]; then
-            echo "❌ ERROR: Missing pmd.xml configuration file"
-            echo "Refer to: https://pmd.github.io/"
+            echo "ERROR: Missing pmd.xml configuration file in the root directory."
             exit 1
           fi
-          mvn pmd:check || exit $?
-      - name: Upload PMD Report
+
+      - name: Run PMD Analysis
+        uses: pmd/pmd-github-action@v1
+        with:
+          config: './pmd.xml'
+          src: './src/main/java'
+          format: 'sarif'
+          output-file: './target/pmd-report.sarif'
+
+      - name: Display PMD Report
+        run: |
+          echo "PMD Report Summary:"
+          xmllint --format ./target/pmd-report.xml | grep -E 'file|violation' || echo "No violations found."
+
+      - name: Upload PMD Report as Artifact
         uses: actions/upload-artifact@v4
-        if: failure()
         with:
           name: pmd-report
-          path: target/pmd.xml
+          path: './target/pmd-report.xml'
 
   dependency-check:
     needs: setup
