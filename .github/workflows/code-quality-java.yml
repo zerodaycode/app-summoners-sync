@@ -162,24 +162,19 @@ jobs:
             exit 1
           fi
 
-      - name: Run PMD Analysis
+      - name: Run PMD GitHub Action
         uses: pmd/pmd-github-action@v1
         with:
-          config: './pmd.xml'
-          src: './src/main/java'
-          format: 'sarif'
-          output-file: './target/pmd-report.sarif'
+          sourcePath: './src/main/java'
+          rulesets: './pmd.xml'
+          analyzeModifiedFilesOnly: false
+          createGitHubAnnotations: false
 
       - name: Display PMD Report
         run: |
           echo "PMD Report Summary:"
           xmllint --format ./target/pmd-report.xml | grep -E 'file|violation' || echo "No violations found."
 
-      - name: Upload PMD Report as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pmd-report
-          path: './target/pmd-report.xml'
 
   dependency-check:
     needs: setup
