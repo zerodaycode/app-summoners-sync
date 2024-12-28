@@ -9,7 +9,7 @@ on:
       - 'actions_scripts/**' # Run on PRs affecting the actions_scripts folder
 
 jobs:
-  test-and-coverage:
+  test-and-coverage-action-scripts:
     runs-on: ubuntu-latest
 
     steps:
