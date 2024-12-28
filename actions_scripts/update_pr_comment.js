@@ -12,7 +12,7 @@ export default async (github, context, steps) => {
     const targetRepo = steps.parse_command.outputs.project;
     
     const previousPrComment = JSON.parse(steps.notify_user.outputs.result);
-    const commentId = previousPrComment.comment_id;
+    const commentId = previousPrComment.id;
     const runUrl = `https://github.com/${repoOwner}/${targetRepo}/actions`;
     
     const workflowExecution = JSON.parse(steps.trigger_deployment_workflow.outputs.result);
@@ -27,7 +27,7 @@ export default async (github, context, steps) => {
         await github.rest.issues.updateComment({
             owner: repoOwner,
             repo: context.repo.repo,
-            comment_id: commentId,
+            id: commentId,
             body: message,
         });
     }

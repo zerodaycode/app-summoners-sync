@@ -5,14 +5,15 @@ import { ciLocalRun, extractUsername } from "./helpers.js";
  * @param {Object} options - The options for the notification.
  * @param {Object} options.github - GitHub API client provided by actions/github-script.
  * @param {Object} options.context - Context object from GitHub Actions, containing payload and environment details.
+ * @param {Object} options.core - Core object from GitHub Actions, containing actions to perform over the workflow.
  * @param {string} options.environment - Deployment environment (e.g., pre, prod).
  * @param {string} options.project - Project name associated with the deployment.
  * @param {string} options.infra - Infrastructure type (e.g., postgres, redis).
  * @returns {Object} - An object containing the comment ID and the message content.
  */
 export default async (options) => {
-  const { github, context, environment, project, infra } = options;
-  
+  const { github, context, core, environment, project, infra } = options;
+
   const isLocalRun = ciLocalRun(context);
 
   const username = extractUsername(context);
@@ -22,14 +23,13 @@ export default async (options) => {
   if (isLocalRun) {
     logMessageOnLocalEnv(message);
     // Return a mock comment ID for local testing purposes.
-    return { comment_id: 1010101010, message: message };
+    return { id: 1010101010, message: message };
   } else {
     try {
       const comment = await createPrComment(github, context, prNumber, message);
-      return { comment_id: comment.data.id, message: message };
+      return { id: comment.data.id, message: message };
     } catch (ex) {
-      console.log("Failed to POST the comment on the PR to notify the user due to =[> " + ex + "]");
-      return { comment_id: null };
+      core.setFailed("Failed to POST the comment on the PR to notify the user due to =[> " + ex + "]");
     }
   }
 };
