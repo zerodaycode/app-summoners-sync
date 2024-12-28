@@ -165,8 +165,7 @@ jobs:
       - name: Run PMD GitHub Action
         uses: pmd/pmd-github-action@v1
         with:
-          sourcePath: './src/main/java'
-          rulesets: './pmd.xml'
+          rulesets: 'pmd.xml'
           analyzeModifiedFilesOnly: false
           createGitHubAnnotations: false
 
