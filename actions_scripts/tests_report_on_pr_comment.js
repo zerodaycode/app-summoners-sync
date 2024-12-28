@@ -6,7 +6,7 @@ import { ciLocalRun, getRepoOwner } from "./helpers.js";
  */
 export default async (github, context, steps) => {
     const isLocalRun = ciLocalRun(context);
-
+    console.log('CTX: ${JSON.stringify(context, null, 2)}');
     const marker = 'to show where the warning was created)';
     const output = steps.run_tests.outputs.tests_report;
     const sanitized = output.split(marker);

@@ -1,9 +1,6 @@
 name: Test Action Scripts
 
 on:
-  push:
-    paths:
-      - 'actions_scripts/**' # Trigger only when files in this folder are modified
   pull_request:
     paths:
       - 'actions_scripts/**' # Run on PRs affecting the actions_scripts folder
