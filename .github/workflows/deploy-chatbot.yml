@@ -1,4 +1,4 @@
-name: Handle PRE env deployment commands in PR Comments
+name: Handle deployment commands in PR Comments
 
 on:
   issue_comment:
@@ -6,68 +6,83 @@ on:
       - created
 
 jobs:
-  handle-slash-command:
+  handle-deployment-on-pr-comment:
     runs-on: ubuntu-latest
 
-    steps:
-      # Step 1: Parse Deployment Command
+    steps:      
+      - uses: actions/checkout@v4
+
       - name: Parse Deployment Command
+        uses: actions/github-script@v7
         id: parse_command
-        run: |
-          COMMENT_BODY="${{ github.event.comment.body }}"
-          echo "Comment received: $COMMENT_BODY"
-          
-          # Initialize variables
-          ENVIRONMENT=""
-          PROJECT=""
-          INFRA=""
-
-          # Parse environment
-          if [[ "$COMMENT_BODY" =~ --environment[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
-            ENVIRONMENT="${BASH_REMATCH[1]}"
-            echo "Environment: $ENVIRONMENT"
-          fi
-
-          # Parse project
-          if [[ "$COMMENT_BODY" =~ --project[[:space:]]+\"([^\"]+)\" ]]; then
-            PROJECT="${BASH_REMATCH[1]}"
-            echo "Project: $PROJECT"
-          fi
-
-          # Parse infra
-          if [[ "$COMMENT_BODY" =~ --infra[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
-            INFRA="${BASH_REMATCH[1]}"
-            echo "Infra: $INFRA"
-          fi
-
-          # Output parsed values
-          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
-          echo "project=$PROJECT" >> $GITHUB_OUTPUT
-          echo "infra=$INFRA" >> $GITHUB_OUTPUT
-
-      # Step 2: Validate and Trigger Deploy Workflow
-      - name: Trigger Deployment Workflow
-        if: steps.parse_command.outputs.environment != '' && steps.parse_command.outputs.project != ''
-        uses: actions/github-script@v6
         with:
+          script: |
+            const { default: parseDeployCommand } =
+              await import('${{ github.workspace }}/actions_scripts/parse_deployment_command.js');
+            
+            parseDeployCommand({context, core});
+            
+      - name: Get GH Zero Day Code APP token
+        if: ${{ !github.event.act }}
+        uses: actions/create-github-app-token@v1
+        id: zdc-auth-app-token
+        with:
+          app-id: ${{ vars.ZDC_AUTH_APP_ID }}
+          private-key: ${{ secrets.ZDC_AUTH_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Notify the user
+        uses: actions/github-script@v7
+        id: notify_user
+        with:
+          script: |
+            const environment = `${{ steps.parse_command.outputs.environment }}`;
+            const project     = `${{ steps.parse_command.outputs.project }}`;
+            const infra       = `${{ steps.parse_command.outputs.infra }}`;
+
+            const { default: notifyUser } =
+              await import('${{ github.workspace }}/actions_scripts/notify_user.js');
+            
+            return await notifyUser({github, context, core, environment, project, infra});
+
+      - name: Trigger Deployment Workflow
+        uses: actions/github-script@v7
+        id: trigger_deployment_workflow
+        with:
+          github-token: ${{ steps.zdc-auth-app-token.outputs.token || github.token }}
           script: |
             const environment = `${{ steps.parse_command.outputs.environment }}`;
             const project = `${{ steps.parse_command.outputs.project }}`;
             const workflowId = `deploy-${environment}.yml`;
 
-            console.log(`Triggering workflow: ${workflowId} for project: ${project}`);
+            let result = "";
+            let details = "";
 
-            github.rest.actions.createWorkflowDispatch({
-              owner: 'zerodaycode',
-              repo: project,
-              workflow_id: workflowId,
-              ref: 'main', // TODO: Change branch to ref 
-            });
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: project,
+                workflow_id: workflowId,
+                ref: 'main', // TODO: Change branch to ref if pre, otherwise PRO should be only on main
+              });
+              status = 'OK';
+              details = 'succedeed';
+            } catch (ex) {
+              console.log(`FAILED TO TRIGGER WORKFLOW:\n${ex}`);
+              status = 'ERR';
+              details = `Failed to trigger the workflow ${workflowId} on repo: ${project}`;
+            }
 
-      # Step 3: Deploy Infra (if requested)
+            // Return triggered details
+            return {
+              workflowId: workflowId,
+              status: status,
+              details: details,
+            };
+
       - name: Deploy Infra
         if: steps.parse_command.outputs.infra != ''
-        uses: appleboy/ssh-action@v0.1.5
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -92,31 +107,14 @@ jobs:
                 ;;
             esac
 
-      # Step 4: Post Confirmation Comment
-      - name: Post Comment to PR
-        uses: actions/github-script@v6
+      - name: Update Deployment Status
+        uses: actions/github-script@v7
+        id: update-comment-with-deployment-status
         with:
           script: |
-            const environment = `${{ steps.parse_command.outputs.environment }}`;
-            const project = `${{ steps.parse_command.outputs.project }}`;
-            const infra = `${{ steps.parse_command.outputs.infra }}`;
-            const prNumber = context.payload.issue.number;
+            const steps = ${{ toJSON(steps) }};
+
+            const { default: updatePrComment } = 
+              await import('${{ github.workspace }}/actions_scripts/update_pr_comment.js');
             
-            let message = "🚀 Deployment triggered:\n";
-            if (project) {
-              message += `- Project: \`${project}\`\n`;
-            }
-            if (environment) {
-              message += `- Environment: \`${environment}\`\n`;
-            }
-            if (infra) {
-              message += `- Infrastructure: \`${infra}\`\n`;
-            }
-
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: message,
-            });
-
+            await updatePrComment(github, context, steps);
