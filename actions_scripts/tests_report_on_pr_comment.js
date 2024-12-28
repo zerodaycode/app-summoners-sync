@@ -12,7 +12,7 @@ export default async (github, context, steps) => {
     const sanitized = output.split(marker);
     const msg = (sanitized.length > 1) ? sanitized[1] : sanitized[0];
 
-    const prNumber = context.payload.issue.number;
+    const prNumber = context.payload.number;
 
     if (!isLocalRun && sanitized.length >= 1) {
         github.rest.issues.createComment({
