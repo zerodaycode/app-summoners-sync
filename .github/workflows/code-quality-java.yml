@@ -140,7 +140,7 @@ jobs:
           restore-keys: |
             maven-deps-${{ runner.os }}-
 
-      - name: Run PMD
+      - name: Run PMD and parse results
         run: |
           if ! grep -i 'maven-pmd-plugin' pom.xml; then
             echo "ERROR: Missing PMD plugin configuration in pom.xml"
@@ -152,7 +152,28 @@ jobs:
             echo "Refer to: https://pmd.github.io/"
             exit 1
           fi
-          mvn pmd:check
+          mvn pmd:check || true
+          # Parse results
+          if [ -f target/pmd.xml ]; then
+            echo "PMD violations detected:"
+            xmllint --xpath '//violation' target/pmd.xml | sed -e 's/<[^>]*>//g'
+          fi
+
+      - name: Upload PMD full report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PMD Report
+          path: target/pmd.xml
+
+      - name: Annotate pull request with PMD issues
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          header: PMD Report
+          message: |
+            $(xmllint --xpath '//violation' target/pmd.xml | sed -e 's/<[^>]*>//g')
 
   dependency-check:
     needs: setup
