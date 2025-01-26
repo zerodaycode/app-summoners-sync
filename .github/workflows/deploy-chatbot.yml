@@ -38,6 +38,7 @@ jobs:
       environment: ${{ needs.parse-command.outputs.environment }}
       project: ${{ needs.parse-command.outputs.project }}
       infra: ${{ needs.parse-command.outputs.infra }}
+    secrets: inherit
 
   trigger-deployment:
     needs: notify-user
