@@ -55,3 +55,4 @@ jobs:
     with:
       artifact: ${{ needs.parse-command.outputs.infra }}
       environment: ${{ needs.parse-command.outputs.environment }}
+    secrets: inherit
