@@ -7,13 +7,20 @@ on:
       environment:
         required: true
         type: string
-      secret_name:
-        required: true
-        type: string
 jobs:
   deploy_infra_artifact:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate Artifact
+        id: validate-artifact
+        run: |
+          case "${{ inputs.artifact }}" in
+            postgres|redis)
+              echo "Valid artifact: ${{ inputs.artifact }}" ;;
+            *)
+              echo "Unknown infra: ${{ inputs.artifact }}"
+              exit 1 ;;
+          esac
       - name: Build compose filename
         id: build-compose-filename
         run: |
@@ -22,6 +29,17 @@ jobs:
           filename="${{ inputs.artifact }}-compose-${{ inputs.environment }}.yml"
           echo "Generated filename: $filename"
           echo "COMPOSE_FILENAME=$filename" >> $GITHUB_ENV
+
+      - name: Deploy Specific Infrastructure
+        id: generate-secret-name
+        run: |
+          INFRA_UPPER=$(echo "${{ inputs.artifact }}" | tr 'a-z' 'A-Z')
+          ENV_UPPER=$(echo "${{ inputs.environment }}" | tr 'a-z' 'A-Z')
+
+          secret_name="SS_${INFRA_UPPER}_${ENV_UPPER}"
+
+          echo "Generated secret_name: $secret_name"
+          echo "SECRET_NAME=$secret_name" >> $GITHUB_OUTPUT
 
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -47,6 +65,6 @@ jobs:
           script: |
             cd /opt/summoners-sync/infra/docker
 
-            echo "${{ secrets[inputs.secret_name] }}" > .env
+            echo "${{secrets[steps.generate-secret.outputs.SECRET_NAME] }}" > .env
             ls -l
             docker-compose --env-file .env -f ${{ env.COMPOSE_FILENAME }} up -d

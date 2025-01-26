@@ -1,0 +1,18 @@
+name: Generate Token
+
+on:
+  workflow_call:
+
+jobs:
+  generate-token:
+    runs-on: ubuntu-latest
+    outputs:
+      token: ${{ steps.generate-token.outputs.token }}
+    steps:
+      - name: Generate GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          app-id: ${{ vars.ZDC_AUTH_APP_ID }}
+          private-key: ${{ secrets.ZDC_AUTH_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}

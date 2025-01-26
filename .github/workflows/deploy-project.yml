@@ -1,0 +1,34 @@
+name: Deploy Project Workflow
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+
+jobs:
+  trigger-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Deployment Workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const environment = `"${{ inputs.environment }}"`;
+            const project     = `"${{ inputs.project }}"`;
+            const workflowId  = `deploy-${environment}.yml`;
+
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: project,
+                workflow_id: workflowId,
+                ref: 'main', // Adjust this if necessary based on branch/ref logic
+              });
+            } catch (error) {
+              core.setFailed(`Failed to trigger the workflow: ${error.message}`);
+            }
