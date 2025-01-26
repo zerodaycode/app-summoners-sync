@@ -26,6 +26,11 @@ jobs:
               await import(`${{ github.workspace }}/actions_scripts/parse_deployment_command.js`);
 
             parseDeployCommand({ context, core });
+      - name: Debug Outputs
+        run: |
+          echo "Environment: ${{ steps.parse-deploy-command.outputs.environment }}"
+          echo "Project: ${{ steps.parse-deploy-command.outputs.project }}"
+          echo "Infra: ${{ steps.parse-deploy-command.outputs.infra }}"
 
   generate-token:
     needs: parse-command
