@@ -11,7 +11,7 @@ jobs:
     outputs:
       artifact: ${{ steps.parse-deploy-command.outputs.infra }}
       environment: ${{ steps.parse-deploy-command.outputs.environment }}
-      project: ${{ steps.parse-parse-deploy-command.outputs.project }}
+      project: ${{ steps.parse-deploy-command.outputs.project }}
 
     steps:
       - name: Checkout Repository
