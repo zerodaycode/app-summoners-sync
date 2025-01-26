@@ -42,7 +42,7 @@ jobs:
   trigger-deployment:
     needs: notify-user
     if: needs.parse-command.outputs.project != ''
-    uses: zerodaycode/app-summoners-sync/.github/workflows/trigger-deployment.yml@develop
+    uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-project.yml@develop
     with:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
