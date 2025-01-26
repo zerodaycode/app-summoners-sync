@@ -38,7 +38,7 @@ jobs:
     secrets: inherit
 
   notify-user:
-    needs: parse-command
+    needs: [parse-command, generate-token]
     uses: zerodaycode/app-summoners-sync/.github/workflows/notify-user.yml@develop
     with:
       environment: ${{ needs.parse-command.outputs.environment }}
@@ -46,15 +46,16 @@ jobs:
       infra: ${{ needs.parse-command.outputs.artifact }}
 
   trigger-deployment:
-    needs: parse-command
+    needs: [parse-command, notify-user]
     if: needs.parse-command.outputs.project != ''
     uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-project.yml@develop
     with:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
+    secrets: inherit
 
   deploy-infra:
-    needs: parse-command
+    needs: [parse-command, notify-user]
     if: needs.parse-command.outputs.artifact != ''
     uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-infra.yml@develop
     with:
