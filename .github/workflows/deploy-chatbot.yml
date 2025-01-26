@@ -38,7 +38,7 @@ jobs:
     with:
       environment: ${{ needs.parse-command.outputs.environment }}
       project: ${{ needs.parse-command.outputs.project }}
-      infra: ${{ needs.parse-command.outputs.infra }}
+      infra: ${{ needs.parse-command.outputs.artifact }}
 
   trigger-deployment:
     needs: notify-user
@@ -50,9 +50,9 @@ jobs:
 
   deploy-infra:
     needs: notify-user
-    if: needs.parse-command.outputs.infra != ''
+    if: needs.parse-command.outputs.artifact != ''
     uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-infra.yml@develop
     with:
-      artifact: ${{ needs.parse-command.outputs.infra }}
+      artifact: ${{ needs.parse-command.outputs.artifact }}
       environment: ${{ needs.parse-command.outputs.environment }}
     secrets: inherit
