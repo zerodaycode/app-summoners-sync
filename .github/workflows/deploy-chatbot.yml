@@ -45,14 +45,15 @@ jobs:
       project: ${{ needs.parse-command.outputs.project }}
       infra: ${{ needs.parse-command.outputs.artifact }}
 
-  trigger-deployment:
-    needs: [parse-command, notify-user]
+  deploy-project:
+    needs: [parse-command, generate-token, notify-user]
     if: needs.parse-command.outputs.project != ''
     uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-project.yml@develop
     with:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
-    secrets: inherit
+    secrets:
+      zdc_token: ${{ needs.generate-token.outputs.token }}
 
   deploy-infra:
     needs: [parse-command, notify-user]
