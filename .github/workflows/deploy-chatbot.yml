@@ -37,7 +37,6 @@ jobs:
     uses: zerodaycode/app-summoners-sync/.github/workflows/generate-token.yml@develop
     secrets: inherit
 
-
   notify-user:
     needs: [parse-command, generate-token]
     uses: zerodaycode/app-summoners-sync/.github/workflows/notify-user.yml@develop
@@ -53,7 +52,8 @@ jobs:
     with:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
-      token: ${{ needs.generate-token.outputs.token }}
+    secrets:
+      zdctoken: ${{ needs.generate-token.outputs.zdctoken }}
 
   deploy-infra:
     needs: [parse-command, notify-user]

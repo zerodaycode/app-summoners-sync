@@ -7,7 +7,7 @@ jobs:
   generate-token:
     runs-on: ubuntu-latest
     outputs:
-      token: ${{ steps.generate-zdc-token.outputs.token }}
+      zdctoken: ${{ steps.generate-zdc-token.outputs.token }}
     steps:
       - name: Generate GitHub App Token
         uses: actions/create-github-app-token@v1
@@ -19,4 +19,4 @@ jobs:
 
       - name: Debug Generated Token
         run: |
-                echo "Generated Token: ${{ steps.generate-zdc-token.outputs.token }}"
+            echo "Generated Token: ${{ steps.generate-zdc-token.outputs.token }}"
