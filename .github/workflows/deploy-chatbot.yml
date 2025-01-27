@@ -37,6 +37,7 @@ jobs:
     uses: zerodaycode/app-summoners-sync/.github/workflows/generate-token.yml@develop
     secrets: inherit
 
+
   notify-user:
     needs: [parse-command, generate-token]
     uses: zerodaycode/app-summoners-sync/.github/workflows/notify-user.yml@develop
