@@ -9,18 +9,26 @@ on:
       environment:
         required: true
         type: string
-    secrets:
       zdctoken:
         required: true
+        type: string
 
 jobs:
   deploy_project_artifact:
     runs-on: ubuntu-latest
     steps:
+      - name: Decrypt ZDC Token
+        id: decrypt-token
+        run: |
+          ENCRYPTED_TOKEN="${{ secrets.zdctoken }}"
+          DECRYPTED_TOKEN=$(echo "$ENCRYPTED_TOKEN" | base64 -d | gpg --decrypt --quiet --batch --passphrase "${{ secrets.PASSPHRASE_ACTION_TOKEN }}")
+          echo "ZDCTOKEN=$DECRYPTED_TOKEN" >> $GITHUB_ENV
+          echo "::add-mask::$DECRYPTED_TOKEN"
+      
       - name: Trigger Deployment Workflow
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.zdctoken }}
+          github-token: ${{ env.ZDCTOKEN }}
           script: |
             const environment = `"${{ inputs.environment }}"`;
             const project     = `"${{ inputs.project }}"`;
