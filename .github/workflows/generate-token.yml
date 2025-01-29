@@ -22,4 +22,4 @@ jobs:
         run: |
           TOKEN="${{ steps.generate-zdc-token.outputs.token }}"
           ENCRYPTED_TOKEN=$(echo -n "$TOKEN" | gpg --symmetric --quiet --batch --passphrase "${{ secrets.PASSPHRASE_ACTION_TOKEN }}" | base64 -w0)
-          echo "ZDC_TOKEN=$ENCRYPTED_TOKEN" >> $GITHUB_OUTPUT
+          echo ZDC_TOKEN=$ENCRYPTED_TOKEN >> $GITHUB_OUTPUT
