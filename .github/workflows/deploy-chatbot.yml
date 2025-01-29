@@ -52,9 +52,8 @@ jobs:
     with:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
-    secrets: 
       ZDC_TOKEN: ${{ needs.generate-token.outputs.ZDC_TOKEN }}
-      PASSPHRASE_ACTION_TOKEN: ${{ secrets.PASSPHRASE_ACTION_TOKEN }}
+    secrets: inherit
 
   deploy-infra:
     needs: [parse-command, notify-user]
