@@ -7,7 +7,7 @@ jobs:
   generate-token:
     runs-on: ubuntu-latest
     outputs:
-      zdctoken: ${{ steps.generate-zdc-token.outputs.encrypt-token }}
+      ZDC_TOKEN: ${{ steps.encrypt-token.outputs.encrypt-token }}
     steps:
       - name: Generate GitHub App Token
         uses: actions/create-github-app-token@v1
@@ -22,4 +22,4 @@ jobs:
         run: |
           TOKEN="${{ steps.generate-zdc-token.outputs.token }}"
           ENCRYPTED_TOKEN=$(echo -n "$TOKEN" | gpg --symmetric --quiet --batch --passphrase "${{ secrets.PASSPHRASE_ACTION_TOKEN }}" | base64 -w0)
-          echo "zdctoken=$ENCRYPTED_TOKEN" >> $GITHUB_OUTPUT
+          echo "ZDC_TOKEN=$ENCRYPTED_TOKEN" >> $GITHUB_OUTPUT

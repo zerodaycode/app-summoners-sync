@@ -9,9 +9,11 @@ on:
       environment:
         required: true
         type: string
-      zdctoken:
+    secrets:
+      ZDC_TOKEN:
         required: true
-        type: string
+      PASSPHRASE_ACTION_TOKEN:
+        required: true
 
 jobs:
   deploy_project_artifact:
@@ -20,7 +22,7 @@ jobs:
       - name: Decrypt ZDC Token
         id: decrypt-token
         run: |
-          ENCRYPTED_TOKEN="${{ secrets.zdctoken }}"
+          ENCRYPTED_TOKEN="${{ secrets.ZDC_TOKEN }}"
           DECRYPTED_TOKEN=$(echo "$ENCRYPTED_TOKEN" | base64 -d | gpg --decrypt --quiet --batch --passphrase "${{ secrets.PASSPHRASE_ACTION_TOKEN }}")
           echo "ZDCTOKEN=$DECRYPTED_TOKEN" >> $GITHUB_ENV
           echo "::add-mask::$DECRYPTED_TOKEN"
