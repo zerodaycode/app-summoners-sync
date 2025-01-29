@@ -7,7 +7,7 @@ jobs:
   generate-token:
     runs-on: ubuntu-latest
     outputs:
-      ZDC_TOKEN: ${{ steps.encrypt-token.outputs.encrypt-token }}
+      ZDC_TOKEN: ${{ steps.encrypt-token.outputs.ZDC_TOKEN }}
     steps:
       - name: Generate GitHub App Token
         uses: actions/create-github-app-token@v1
