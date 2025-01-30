@@ -1,0 +1,17 @@
+name: 'Generate GitHub App Token'
+description: 'Generates a GitHub App token'
+outputs:
+  token:
+    description: 'Generated GitHub App Token'
+    value: ${{ steps.generate-zdc-token.outputs.token }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate GitHub App Token
+      uses: actions/create-github-app-token@v1
+      id: generate-zdc-token
+      with:
+        app-id: ${{ vars.ZDC_AUTH_APP_ID }}
+        private-key: ${{ secrets.ZDC_AUTH_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}

@@ -32,13 +32,8 @@ jobs:
           echo "Project: ${{ steps.parse-deploy-command.outputs.project }}"
           echo "Infra: ${{ steps.parse-deploy-command.outputs.infra }}"
 
-  generate-token:
-    needs: parse-command
-    uses: zerodaycode/app-summoners-sync/.github/workflows/generate-token.yml@develop
-    secrets: inherit
-
   notify-user:
-    needs: [parse-command, generate-token]
+    needs: [parse-command]
     uses: zerodaycode/app-summoners-sync/.github/workflows/notify-user.yml@develop
     with:
       environment: ${{ needs.parse-command.outputs.environment }}
@@ -46,15 +41,12 @@ jobs:
       infra: ${{ needs.parse-command.outputs.artifact }}
 
   deploy-project:
-    needs: [parse-command, generate-token, notify-user]
+    needs: [parse-command, notify-user]
     if: needs.parse-command.outputs.project != ''
     uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-project.yml@develop
     with:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
-    secrets: 
-      ZDC_TOKEN: ${{ needs.generate-token.outputs.ZDC_TOKEN }}
-      PASSPHRASE_ACTION_TOKEN: ${{ secrets.PASSPHRASE_ACTION_TOKEN }}
 
   deploy-infra:
     needs: [parse-command, notify-user]
