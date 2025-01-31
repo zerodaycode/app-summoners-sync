@@ -47,7 +47,8 @@ jobs:
     with:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
-
+    secrets: inherit
+    
   deploy-infra:
     needs: [parse-command, notify-user]
     if: needs.parse-command.outputs.artifact != ''
