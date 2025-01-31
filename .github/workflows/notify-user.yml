@@ -15,6 +15,7 @@ on:
 
 jobs:
   notify-user:
+    name: Notify user
     runs-on: ubuntu-latest
     steps:
       

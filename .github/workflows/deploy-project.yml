@@ -13,6 +13,7 @@ on:
 
 jobs:
   deploy_project_artifact:
+    name: Deploy Project Artifact
     runs-on: ubuntu-latest
     steps:
       - name: Generate Token

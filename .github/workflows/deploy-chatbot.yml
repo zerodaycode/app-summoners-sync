@@ -7,6 +7,7 @@ on:
 
 jobs:
   parse-command:
+    name: Parse command
     runs-on: ubuntu-latest
     outputs:
       artifact: ${{ steps.parse-deploy-command.outputs.infra }}
@@ -33,6 +34,7 @@ jobs:
           echo "Infra: ${{ steps.parse-deploy-command.outputs.infra }}"
 
   notify-user:
+    name: Notify user
     needs: [parse-command]
     uses: zerodaycode/app-summoners-sync/.github/workflows/notify-user.yml@develop
     with:
@@ -41,6 +43,7 @@ jobs:
       infra: ${{ needs.parse-command.outputs.artifact }}
 
   deploy-project:
+    name: Deploy project
     needs: [parse-command, notify-user]
     if: needs.parse-command.outputs.project != ''
     uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-project.yml@develop
@@ -48,8 +51,9 @@ jobs:
       project: ${{ needs.parse-command.outputs.project }}
       environment: ${{ needs.parse-command.outputs.environment }}
     secrets: inherit
-    
+
   deploy-infra:
+    name: Deploy Infrastructure
     needs: [parse-command, notify-user]
     if: needs.parse-command.outputs.artifact != ''
     uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-infra.yml@develop
