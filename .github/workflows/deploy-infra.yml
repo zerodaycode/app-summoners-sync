@@ -1,0 +1,72 @@
+name: Deploy Infrastructure artifact
+
+on:
+  workflow_call:
+    inputs:
+      artifact:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+jobs:
+  deploy_infra_artifact:
+    name: Deploy Infrastructure Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Artifact
+        id: validate-artifact
+        run: |
+          case "${{ inputs.artifact }}" in
+            postgres|redis)
+              echo "Valid artifact: ${{ inputs.artifact }}" ;;
+            *)
+              echo "Unknown infra: ${{ inputs.artifact }}"
+              exit 1 ;;
+          esac
+      - name: Build compose filename
+        id: build-compose-filename
+        run: |
+          echo "Artifact: ${{ inputs.artifact }}"
+          echo "Environment: ${{ inputs.environment }}"
+          filename="${{ inputs.artifact }}-compose-${{ inputs.environment }}.yml"
+          echo "Generated filename: $filename"
+          echo "COMPOSE_FILENAME=$filename" >> $GITHUB_ENV
+
+      - name: Deploy Specific Infrastructure
+        id: generate-secret-name
+        run: |
+          INFRA_UPPER=$(echo "${{ inputs.artifact }}" | tr 'a-z' 'A-Z')
+          ENV_UPPER=$(echo "${{ inputs.environment }}" | tr 'a-z' 'A-Z')
+
+          secret_name="SS_${INFRA_UPPER}_${ENV_UPPER}"
+
+          echo "Generated secret_name: $secret_name"
+          echo "SECRET_NAME=$secret_name" >> $GITHUB_OUTPUT
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+
+      - name: Transfer Compose File to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_SSH_HOST_PRE }}
+          username: ${{ secrets.DO_SSH_USER_PRE }}
+          key: ${{ secrets.DO_SSH_KEY_PRE }}
+          source: "infra/docker/${{ env.COMPOSE_FILENAME }}"
+          target: /opt/summoners-sync/
+          rm: true
+
+      - name: Run docker with env
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DO_SSH_HOST_PRE }}
+          username: ${{ secrets.DO_SSH_USER_PRE }}
+          key: ${{ secrets.DO_SSH_KEY_PRE }}
+          script: |
+            cd /opt/summoners-sync/infra/docker
+
+            echo "${{secrets[steps.generate-secret.outputs.SECRET_NAME] }}" > .env
+            ls -l
+            docker-compose --env-file .env -f ${{ env.COMPOSE_FILENAME }} up -d

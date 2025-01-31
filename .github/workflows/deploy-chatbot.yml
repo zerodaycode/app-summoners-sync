@@ -1,0 +1,63 @@
+name: Deploy Chatbot
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  parse-command:
+    name: Parse command
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.parse-deploy-command.outputs.infra }}
+      environment: ${{ steps.parse-deploy-command.outputs.environment }}
+      project: ${{ steps.parse-deploy-command.outputs.project }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Parse Deployment Command
+        uses: actions/github-script@v7
+        id: parse-deploy-command
+        with:
+          script: |
+            const { default: parseDeployCommand } =
+              await import(`${{ github.workspace }}/actions_scripts/parse_deployment_command.js`);
+
+            parseDeployCommand({ context, core });
+      - name: Debug Outputs
+        run: |
+          echo "Environment: ${{ steps.parse-deploy-command.outputs.environment }}"
+          echo "Project: ${{ steps.parse-deploy-command.outputs.project }}"
+          echo "Infra: ${{ steps.parse-deploy-command.outputs.infra }}"
+
+  notify-user:
+    name: Notify user
+    needs: [parse-command]
+    uses: zerodaycode/app-summoners-sync/.github/workflows/notify-user.yml@develop
+    with:
+      environment: ${{ needs.parse-command.outputs.environment }}
+      project: ${{ needs.parse-command.outputs.project }}
+      infra: ${{ needs.parse-command.outputs.artifact }}
+
+  deploy-project:
+    name: Deploy project
+    needs: [parse-command, notify-user]
+    if: needs.parse-command.outputs.project != ''
+    uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-project.yml@develop
+    with:
+      project: ${{ needs.parse-command.outputs.project }}
+      environment: ${{ needs.parse-command.outputs.environment }}
+    secrets: inherit
+
+  deploy-infra:
+    name: Deploy Infrastructure
+    needs: [parse-command, notify-user]
+    if: needs.parse-command.outputs.artifact != ''
+    uses: zerodaycode/app-summoners-sync/.github/workflows/deploy-infra.yml@develop
+    with:
+      artifact: ${{ needs.parse-command.outputs.artifact }}
+      environment: ${{ needs.parse-command.outputs.environment }}
+    secrets: inherit
