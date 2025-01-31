@@ -27,8 +27,8 @@ jobs:
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
           script: |
-            const environment = `"${{ inputs.environment }}"`;
-            const project     = `"${{ inputs.project }}"`;
+            const environment = "${{ inputs.environment }}";
+            const project     = "${{ inputs.project }}"; 
             const workflowId  = `deploy-${environment}.yml`;
 
             try {
