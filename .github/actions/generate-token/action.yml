@@ -1,5 +1,13 @@
 name: 'Generate GitHub App Token'
 description: 'Generates a GitHub App token'
+inputs:
+  app-id:
+    description: 'GitHub App ID'
+    required: true
+  private-key:
+    description: 'GitHub App Private Key'
+    required: true
+
 outputs:
   token:
     description: 'Generated GitHub App Token'
@@ -12,6 +20,6 @@ runs:
       uses: actions/create-github-app-token@v1
       id: generate-zdc-token
       with:
-        app-id: ${{ vars.ZDC_AUTH_APP_ID }}
-        private-key: ${{ secrets.ZDC_AUTH_PRIVATE_KEY }}
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
         owner: ${{ github.repository_owner }}
